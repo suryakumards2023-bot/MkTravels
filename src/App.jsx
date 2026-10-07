@@ -7,8 +7,11 @@ import Tours from "./pages/Tours";
 import TourDetails from "./pages/TourDetails";
 import Search from "./pages/Search";
 import Booking from "./pages/Booking";
+import Payment from "./pages/Payment";
+import MyBookings from "./pages/MyBookings";
+import BookingDetails from "./pages/BookingDetails";
 import Login from "./pages/Login";
-import Register from "./pages/Register";
+import Signup from "./pages/Signup";
 import MyTrips from "./pages/MyTrips";
 import Profile from "./pages/Profile";
 
@@ -40,14 +43,31 @@ function App() {
           />
 
           <Route
+            path="/payment/:id"
+            element={<Payment />}
+          />
+
+          <Route path="/my-bookings" element={<MyBookings />} />
+
+          <Route
+  path="/my-trips"
+  element={<MyBookings />}
+/>
+
+          <Route
+  path="/booking-details/:id"
+  element={<BookingDetails />}
+/>
+
+          <Route
             path="/login"
             element={<Login />}
           />
 
           <Route
-            path="/register"
-            element={<Register />}
-          />
+  path="/signup"
+  element={<Signup />}
+/>
 
           <Route
             path="/my-trips"

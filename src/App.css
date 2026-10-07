@@ -411,32 +411,6 @@ button {
   overflow: hidden;
 }
 
-
-/* =========================================
-   ARROW
-========================================= */
-.destination-arrow {
-  flex-shrink: 0;
-  width: 36px;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #2563eb;
-  background: #eff6ff;
-  border-radius: 50%;
-  transition:
-    background 0.2s ease,
-    color 0.2s ease,
-    transform 0.2s ease;
-}
-
-.destination-card:hover .destination-arrow {
-  color: #ffffff;
-  background: #2563eb;
-  transform: translateX(3px);
-}
-
 /* =========================================
    VIEW ALL
 ========================================= */
@@ -485,4 +459,109 @@ button {
     height: 220px;
   }
 
+}
+
+/* =========================================
+   DESTINATION IMAGE RATING
+========================================= */
+
+.destination-rating {
+  position: absolute;
+
+  right: 14px;
+  bottom: 14px;
+
+  padding: 5px 9px;
+
+  color: #ffffff;
+
+  background: #16a34a;
+
+  border-radius: 6px;
+
+  font-size: 12px;
+  font-weight: 700;
+}
+
+
+/* =========================================
+   DESTINATION INFO
+========================================= */
+
+.destination-info {
+  flex: 1;
+}
+
+/* =========================================
+   DURATION
+========================================= */
+
+.destination-duration {
+  margin-top: 10px;
+
+  color: #6b7280;
+
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* =========================================
+   PRICE
+========================================= */
+
+.destination-price {
+  display: flex;
+
+  align-items: center;
+
+  gap: 7px;
+
+  margin-top: 8px;
+}
+
+
+.destination-price-current {
+  color: #111827;
+
+  font-size: 18px;
+  font-weight: 700;
+}
+
+
+.destination-price-old {
+  color: #9ca3af;
+
+  font-size: 11px;
+
+  text-decoration: line-through;
+}
+
+/* =========================================
+   VIEW TOUR BUTTON
+========================================= */
+
+.destination-view-button {
+  flex-shrink: 0;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  gap: 5px;
+
+  padding: 8px 11px;
+
+  color: #2563eb;
+
+  background: #eff6ff;
+
+  border-radius: 7px;
+
+  font-size: 11px;
+  font-weight: 600;
+
+  transition:
+    color 0.2s ease,
+    background 0.2s ease;
 }

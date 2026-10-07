@@ -35,23 +35,23 @@ function Footer() {
 
           <div className="footer-social">
 
-            <a href="#" aria-label="Facebook">
+            <a href="https://www.facebook.com/mktravelsbihar/" aria-label="Facebook">
               f
             </a>
 
-            <a href="#" aria-label="Instagram">
+            <a href="https://www.instagram.com/mktravelsbihar/" aria-label="Instagram">
               ◎
             </a>
 
-            <a href="#" aria-label="Twitter">
+            <a href="https://twitter.com/mktravelsbihar" aria-label="Twitter">
               𝕏
             </a>
 
-            <a href="#" aria-label="YouTube">
+            <a href="https://www.youtube.com/@mktravelsbihar" aria-label="YouTube">
               ▶
             </a>
 
-            <a href="#" aria-label="LinkedIn">
+            <a href="https://www.linkedin.com/company/mktravelsbihar" aria-label="LinkedIn">
               in
             </a>
 
@@ -155,7 +155,7 @@ function Footer() {
             <Mail size={17} />
 
             <span>
-              support@mktravels.com
+              mktravelsbihar@gmail.com
             </span>
 
           </div>

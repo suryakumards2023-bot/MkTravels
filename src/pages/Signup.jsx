@@ -1,29 +1,36 @@
 import { useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   ArrowRight,
   Eye,
   EyeOff,
   Lock,
   Mail,
+  Phone,
   ShieldCheck,
   UserRound,
 } from "lucide-react";
 
-import { loginUser } from "../utils/authStorage";
+import { signupUser } from "../utils/authStorage";
 
 import "./Auth.css";
 
-const Login = () => {
+const Signup = () => {
   const navigate = useNavigate();
-  const location = useLocation();
 
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-  });
+  const [formData, setFormData] =
+    useState({
+      name: "",
+      email: "",
+      phone: "",
+      password: "",
+      confirmPassword: "",
+    });
 
   const [showPassword, setShowPassword] =
+    useState(false);
+
+  const [showConfirmPassword, setShowConfirmPassword] =
     useState(false);
 
   const [error, setError] = useState("");
@@ -40,27 +47,56 @@ const Login = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
 
+    const {
+      name,
+      email,
+      phone,
+      password,
+      confirmPassword,
+    } = formData;
+
     if (
-      !formData.email ||
-      !formData.password
+      !name ||
+      !email ||
+      !phone ||
+      !password ||
+      !confirmPassword
     ) {
       setError(
-        "Please enter email and password."
+        "Please fill in all fields."
       );
       return;
     }
 
-    const result = loginUser(formData);
+    if (password.length < 6) {
+      setError(
+        "Password must be at least 6 characters."
+      );
+      return;
+    }
+
+    if (
+      password !== confirmPassword
+    ) {
+      setError(
+        "Passwords do not match."
+      );
+      return;
+    }
+
+    const result = signupUser({
+      name,
+      email,
+      phone,
+      password,
+    });
 
     if (!result.success) {
       setError(result.message);
       return;
     }
 
-    const redirectTo =
-      location.state?.from || "/my-trips";
-
-    navigate(redirectTo, {
+    navigate("/my-trips", {
       replace: true,
     });
   };
@@ -83,15 +119,14 @@ const Login = () => {
             </span>
 
             <h1>
-              Your journey
+              Travel more.
               <br />
-              starts here.
+              Remember more.
             </h1>
 
             <p>
-              Sign in to manage your trips,
-              bookings and travel preferences
-              in one place.
+              Create your account and keep
+              all your journeys together.
             </p>
 
             <div className="auth-benefits">
@@ -100,7 +135,7 @@ const Login = () => {
                 <ShieldCheck size={19} />
 
                 <span>
-                  Secure booking management
+                  Safe & secure account
                 </span>
               </div>
 
@@ -108,7 +143,7 @@ const Login = () => {
                 <UserRound size={19} />
 
                 <span>
-                  Personalized travel profile
+                  Manage traveller details
                 </span>
               </div>
 
@@ -116,7 +151,7 @@ const Login = () => {
                 <ArrowRight size={19} />
 
                 <span>
-                  Easy access to your trips
+                  Track all your bookings
                 </span>
               </div>
 
@@ -132,6 +167,7 @@ const Login = () => {
           <div className="auth-form-wrapper">
 
             <div className="auth-mobile-logo">
+
               <div className="auth-logo">
                 MK
               </div>
@@ -139,21 +175,22 @@ const Login = () => {
               <strong>
                 MK TRAVELS
               </strong>
+
             </div>
 
             <div className="auth-heading">
 
               <span>
-                WELCOME BACK
+                JOIN MK TRAVELS
               </span>
 
               <h2>
-                Sign in to your account
+                Create your account
               </h2>
 
               <p>
-                Access your bookings and
-                manage your trips.
+                Start planning your next
+                unforgettable journey.
               </p>
 
             </div>
@@ -169,6 +206,30 @@ const Login = () => {
               className="auth-form"
             >
 
+              {/* NAME */}
+              <div className="auth-field">
+
+                <label>
+                  Full Name
+                </label>
+
+                <div className="auth-input">
+
+                  <UserRound size={18} />
+
+                  <input
+                    type="text"
+                    name="name"
+                    placeholder="Enter your full name"
+                    value={formData.name}
+                    onChange={handleChange}
+                  />
+
+                </div>
+
+              </div>
+
+              {/* EMAIL */}
               <div className="auth-field">
 
                 <label>
@@ -191,27 +252,35 @@ const Login = () => {
 
               </div>
 
+              {/* PHONE */}
               <div className="auth-field">
 
-                <div className="auth-label-row">
+                <label>
+                  Mobile Number
+                </label>
 
-                  <label>
-                    Password
-                  </label>
+                <div className="auth-input">
 
-                  <button
-                    type="button"
-                    className="forgot-btn"
-                    onClick={() =>
-                      alert(
-                        "Password reset will be available after backend integration."
-                      )
-                    }
-                  >
-                    Forgot password?
-                  </button>
+                  <Phone size={18} />
+
+                  <input
+                    type="tel"
+                    name="phone"
+                    placeholder="+91 98765 43210"
+                    value={formData.phone}
+                    onChange={handleChange}
+                  />
 
                 </div>
+
+              </div>
+
+              {/* PASSWORD */}
+              <div className="auth-field">
+
+                <label>
+                  Password
+                </label>
 
                 <div className="auth-input">
 
@@ -224,7 +293,7 @@ const Login = () => {
                         : "password"
                     }
                     name="password"
-                    placeholder="Enter your password"
+                    placeholder="Minimum 6 characters"
                     value={formData.password}
                     onChange={handleChange}
                   />
@@ -249,11 +318,56 @@ const Login = () => {
 
               </div>
 
+              {/* CONFIRM PASSWORD */}
+              <div className="auth-field">
+
+                <label>
+                  Confirm Password
+                </label>
+
+                <div className="auth-input">
+
+                  <Lock size={18} />
+
+                  <input
+                    type={
+                      showConfirmPassword
+                        ? "text"
+                        : "password"
+                    }
+                    name="confirmPassword"
+                    placeholder="Re-enter your password"
+                    value={
+                      formData.confirmPassword
+                    }
+                    onChange={handleChange}
+                  />
+
+                  <button
+                    type="button"
+                    className="password-toggle"
+                    onClick={() =>
+                      setShowConfirmPassword(
+                        !showConfirmPassword
+                      )
+                    }
+                  >
+                    {showConfirmPassword ? (
+                      <EyeOff size={18} />
+                    ) : (
+                      <Eye size={18} />
+                    )}
+                  </button>
+
+                </div>
+
+              </div>
+
               <button
                 type="submit"
                 className="auth-submit"
               >
-                Sign In
+                Create Account
                 <ArrowRight size={18} />
               </button>
 
@@ -261,15 +375,15 @@ const Login = () => {
 
             <div className="auth-divider">
               <span>
-                Don't have an account?
+                Already have an account?
               </span>
             </div>
 
             <Link
-              to="/signup"
+              to="/login"
               className="auth-secondary-btn"
             >
-              Create New Account
+              Sign In
             </Link>
 
             <Link
@@ -288,4 +402,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default Signup;

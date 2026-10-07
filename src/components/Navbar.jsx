@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { User, Menu } from "lucide-react";
+import { User, Menu, } from "lucide-react";
 
 function Navbar() {
   return (
@@ -14,7 +14,7 @@ function Navbar() {
           <Link to="/">Home</Link>
           <Link to="/tours">Tours</Link>
           <Link to="/search">Search</Link>
-          <Link to="/my-trips">My Trips</Link>
+          <Link to="/my-trips">My Booking</Link>
         </nav>
 
         <div className="nav-actions">
