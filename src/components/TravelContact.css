@@ -1,0 +1,576 @@
+/* =========================================
+   DESTINATION CONTACT ACTIONS
+========================================= */
+
+.destination-contact-actions {
+  display: grid;
+  grid-template-columns: 0.8fr 1.5fr;
+  gap: 8px;
+  width: 100%;
+  margin-top: 14px;
+}
+
+/* =========================================
+   COMMON BUTTON STYLE
+========================================= */
+
+.destination-call-btn,
+.destination-callback-btn {
+  min-height: 40px;
+  width: 100%;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+
+  box-sizing: border-box;
+
+  border-radius: 8px;
+
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 700;
+
+  cursor: pointer;
+  text-decoration: none;
+
+  transition: all 0.2s ease;
+}
+
+/* =========================================
+   CALL BUTTON
+========================================= */
+
+.destination-call-btn {
+  border: 1px solid #86efac;
+  background: #f0fdf4;
+  color: #15803d;
+}
+
+.destination-call-btn:hover {
+  border-color: #4ade80;
+  background: #dcfce7;
+  color: #15803d;
+
+  transform: translateY(-1px);
+}
+
+/* =========================================
+   REQUEST CALLBACK BUTTON
+========================================= */
+
+.destination-callback-btn {
+  border: 1px solid #1688e8;
+  background: #1688e8;
+  color: #ffffff;
+
+  box-shadow:
+    0 4px 10px rgba(22, 136, 232, 0.18);
+}
+
+.destination-callback-btn:hover {
+  border-color: #1268e8;
+  background: #1268e8;
+  color: #ffffff;
+
+  transform: translateY(-1px);
+
+  box-shadow:
+    0 6px 15px rgba(22, 136, 232, 0.25);
+}
+
+/* =========================================
+   BUTTON ICON + TEXT
+========================================= */
+
+.destination-call-btn svg,
+.destination-callback-btn svg {
+  display: block;
+  flex-shrink: 0;
+  color: currentColor;
+}
+
+.destination-call-btn span,
+.destination-callback-btn span {
+  display: inline-block;
+  color: inherit;
+  white-space: nowrap;
+}
+
+
+/* =========================================
+   CALLBACK POPUP OVERLAY
+========================================= */
+
+.callback-popup-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 20px;
+
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(5px);
+
+  /* popup open hone ke baad stable */
+  animation: none;
+
+  /* mouse interaction stable */
+  isolation: isolate;
+}
+
+/* =========================================
+   POPUP
+========================================= */
+.callback-popup {
+  position: relative;
+
+  width: 100%;
+  max-width: 440px;
+  max-height: 90vh;
+
+  overflow-y: auto;
+  box-sizing: border-box;
+
+  padding: 30px;
+
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+
+  background: #ffffff;
+
+  box-shadow: 0 25px 70px rgba(0, 0, 0, 0.25);
+
+  /* IMPORTANT: no movement on cursor */
+  transform: none;
+  animation: none;
+
+  /* popup ke andar cursor stable */
+  pointer-events: auto;
+}
+
+
+
+/* =========================================
+   CLOSE BUTTON
+========================================= */
+
+.callback-popup-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+
+  width: 36px;
+  height: 36px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: none;
+  border-radius: 50%;
+
+  background: #f1f5f9;
+  color: #475569;
+
+  cursor: pointer;
+
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.callback-popup-close:hover {
+  background: #e2e8f0;
+  color: #111827;
+
+  /* No transform */
+  transform: none;
+}
+
+/* =========================================
+   POPUP HEADER
+========================================= */
+
+.callback-popup-header {
+  display: flex;
+  align-items: center;
+
+  gap: 13px;
+
+  padding-right: 30px;
+}
+
+
+/* =========================================
+   POPUP ICON
+========================================= */
+
+.callback-popup-icon {
+  width: 52px;
+  height: 52px;
+
+  flex-shrink: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 50%;
+
+  background:
+    linear-gradient(
+      135deg,
+      #eff6ff,
+      #dbeafe
+    );
+
+  color: #1688e8;
+}
+
+
+/* =========================================
+   POPUP LABEL
+========================================= */
+
+.callback-popup-label {
+  display: block;
+
+  margin-bottom: 4px;
+
+  color: #1688e8;
+
+  font-size: 9px;
+  font-weight: 800;
+
+  letter-spacing: 1.3px;
+}
+
+
+/* =========================================
+   POPUP TITLE
+========================================= */
+
+.callback-popup h2 {
+  margin: 0;
+
+  color: #111827;
+
+  font-size: 23px;
+  line-height: 1.2;
+
+  font-weight: 800;
+}
+
+
+/* =========================================
+   DESCRIPTION
+========================================= */
+
+.callback-popup-description {
+  margin: 17px 0 22px;
+
+  color: #64748b;
+
+  font-size: 12px;
+  line-height: 1.65;
+}
+
+.callback-popup-description strong {
+  color: #1688e8;
+  font-weight: 800;
+}
+
+
+/* =========================================
+   FORM
+========================================= */
+
+.callback-form {
+  display: flex;
+  flex-direction: column;
+}
+
+
+/* =========================================
+   FORM FIELD
+========================================= */
+
+.callback-field {
+  margin-bottom: 14px;
+}
+
+
+/* =========================================
+   LABEL
+========================================= */
+
+.callback-field label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  margin-bottom: 6px;
+
+  color: #374151;
+
+  font-size: 11px;
+  font-weight: 700;
+}
+
+
+/* =========================================
+   OPTIONAL TEXT
+========================================= */
+
+.optional-text {
+  color: #9ca3af;
+
+  font-size: 9px;
+  font-weight: 500;
+}
+
+
+/* =========================================
+   INPUT + SELECT
+========================================= */
+
+.callback-field input,
+.callback-field select {
+  width: 100%;
+  height: 44px;
+
+  box-sizing: border-box;
+
+  padding: 0 12px;
+
+  border: 1px solid #d7dce2;
+  border-radius: 8px;
+
+  outline: none;
+
+  background: #ffffff;
+  color: #111827;
+
+  font-family: inherit;
+  font-size: 12px;
+
+  transition: all 0.2s ease;
+}
+
+
+/* =========================================
+   PLACEHOLDER
+========================================= */
+
+.callback-field input::placeholder {
+  color: #9ca3af;
+}
+
+
+/* =========================================
+   INPUT FOCUS
+========================================= */
+
+.callback-field input:focus,
+.callback-field select:focus {
+  border-color: #1688e8;
+
+  box-shadow:
+    0 0 0 3px rgba(22, 136, 232, 0.09);
+}
+
+
+/* =========================================
+   SUBMIT BUTTON
+========================================= */
+
+.callback-submit-btn {
+  width: 100%;
+  height: 46px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 7px;
+
+  margin-top: 4px;
+
+  border: none;
+  border-radius: 8px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #1688e8,
+      #1268e8
+    );
+
+  color: #ffffff;
+
+  font-family: inherit;
+
+  font-size: 12px;
+  font-weight: 700;
+
+  cursor: pointer;
+
+  box-shadow:
+    0 5px 14px rgba(22, 136, 232, 0.2);
+
+  transition: all 0.2s ease;
+}
+
+.callback-submit-btn:hover {
+  background:
+    linear-gradient(
+      135deg,
+      #1268e8,
+      #0f56c7
+    );
+
+  transform: translateY(-1px);
+
+  box-shadow:
+    0 7px 18px rgba(22, 136, 232, 0.28);
+}
+
+
+/* =========================================
+   POPUP FOOTER
+========================================= */
+
+.callback-popup-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 6px;
+
+  margin-top: 13px;
+
+  color: #94a3b8;
+
+  font-size: 10px;
+
+  text-align: center;
+}
+
+
+/* =========================================
+   GREEN STATUS DOT
+========================================= */
+
+.callback-footer-dot {
+  width: 6px;
+  height: 6px;
+
+  flex-shrink: 0;
+
+  border-radius: 50%;
+
+  background: #22c55e;
+
+  box-shadow:
+    0 0 0 3px rgba(34, 197, 94, 0.1);
+}
+
+
+/* =========================================
+   TABLET
+========================================= */
+
+@media (max-width: 700px) {
+
+  .destination-contact-actions {
+    grid-template-columns: 0.9fr 1.5fr;
+  }
+
+  .callback-popup {
+    max-width: 430px;
+
+    padding: 26px 22px;
+
+    border-radius: 16px;
+  }
+
+}
+
+
+/* =========================================
+   MOBILE
+========================================= */
+
+@media (max-width: 480px) {
+
+  .destination-contact-actions {
+    grid-template-columns: 0.9fr 1.5fr;
+
+    gap: 7px;
+  }
+
+  .destination-call-btn,
+  .destination-callback-btn {
+    min-height: 41px;
+
+    font-size: 10px;
+  }
+
+  .callback-popup-overlay {
+    padding: 14px;
+  }
+
+  .callback-popup {
+    max-height: 92vh;
+
+    padding: 24px 18px;
+
+    border-radius: 15px;
+  }
+
+  .callback-popup-header {
+    gap: 10px;
+  }
+
+  .callback-popup-icon {
+    width: 46px;
+    height: 46px;
+  }
+
+  .callback-popup h2 {
+    font-size: 20px;
+  }
+
+}
+
+
+/* =========================================
+   SMALL MOBILE
+========================================= */
+
+@media (max-width: 380px) {
+
+  .destination-contact-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .destination-call-btn,
+  .destination-callback-btn {
+    min-height: 41px;
+  }
+
+  .callback-popup {
+    padding: 22px 16px;
+  }
+
+  .callback-popup h2 {
+    font-size: 19px;
+  }
+
+}

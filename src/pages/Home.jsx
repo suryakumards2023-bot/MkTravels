@@ -1,22 +1,22 @@
-import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
-
+import { Link, useNavigate } from "react-router-dom";
 import {
-  Bus,
-  Car,
-  Hotel,
-  Palmtree,
-  ShieldCheck,
   ArrowRight,
-  MapPin,
-  CalendarDays,
-  Users,
-  Search,
-  Clock,
   Briefcase,
+  Bus,
+  CalendarDays,
+  Car,
+  Clock,
+  Hotel,
+  MapPin,
+  Palmtree,
+  Search,
+  ShieldCheck,
+  Users,
 } from "lucide-react";
 
 import destinations from "../data/destinations";
+import TravelContact from "../components/TravelContact";
 
 function Home() {
   const navigate = useNavigate();
@@ -67,17 +67,10 @@ function Home() {
   // =========================================
   // INSURANCE
   // =========================================
-  const [insuranceType, setInsuranceType] =
-    useState("Domestic Travel");
-
-  const [insuranceTravellers, setInsuranceTravellers] =
-    useState("1");
-
-  const [insuranceDate, setInsuranceDate] =
-    useState(today);
-
-  const [insuranceDestination, setInsuranceDestination] =
-    useState("");
+  const [insuranceType, setInsuranceType] = useState("Domestic Travel");
+  const [insuranceTravellers, setInsuranceTravellers] = useState("1");
+  const [insuranceDate, setInsuranceDate] = useState(today);
+  const [insuranceDestination, setInsuranceDestination] = useState("");
 
   // =========================================
   // SERVICES
@@ -132,11 +125,9 @@ function Home() {
     }
 
     navigate(
-      `/search?type=bus&from=${encodeURIComponent(
+      `/bus-result?type=bus&from=${encodeURIComponent(
         busFrom
-      )}&to=${encodeURIComponent(
-        busTo
-      )}&date=${encodeURIComponent(busDate)}`
+      )}&to=${encodeURIComponent(busTo)}&date=${encodeURIComponent(busDate)}`
     );
   };
 
@@ -157,15 +148,11 @@ function Home() {
     navigate(
       `/cab-results?type=${encodeURIComponent(
         cabType
-      )}&from=${encodeURIComponent(
-        cabFrom
-      )}&to=${encodeURIComponent(
+      )}&from=${encodeURIComponent(cabFrom)}&to=${encodeURIComponent(
         cabTo
       )}&date=${encodeURIComponent(
         cabDate
-      )}&time=${encodeURIComponent(
-        cabTime
-      )}&travellers=${encodeURIComponent(
+      )}&time=${encodeURIComponent(cabTime)}&travellers=${encodeURIComponent(
         cabTravellers
       )}`
     );
@@ -192,9 +179,7 @@ function Home() {
         hotelCheckIn
       )}&checkOut=${encodeURIComponent(
         hotelCheckOut
-      )}&guests=${encodeURIComponent(
-        hotelGuests
-      )}`
+      )}&guests=${encodeURIComponent(hotelGuests)}`
     );
   };
 
@@ -212,9 +197,7 @@ function Home() {
         tourDestination
       )}&date=${encodeURIComponent(
         tourDate
-      )}&travellers=${encodeURIComponent(
-        tourTravellers
-      )}`
+      )}&travellers=${encodeURIComponent(tourTravellers)}`
     );
   };
 
@@ -234,23 +217,17 @@ function Home() {
         insuranceDestination
       )}&date=${encodeURIComponent(
         insuranceDate
-      )}&travellers=${encodeURIComponent(
-        insuranceTravellers
-      )}`
+      )}&travellers=${encodeURIComponent(insuranceTravellers)}`
     );
   };
 
   return (
     <main className="home-page">
-
       {/* =========================================
           TRAVEL SERVICES
       ========================================= */}
-
       <section className="travel-services-container">
-
         <div className="travel-services">
-
           {travelServices.map((service) => {
             const Icon = service.icon;
 
@@ -263,38 +240,26 @@ function Home() {
                     ? "travel-service-card active"
                     : "travel-service-card"
                 }
-                onClick={() =>
-                  handleServiceClick(service)
-                }
+                onClick={() => handleServiceClick(service)}
               >
                 <div
                   className={`travel-service-icon ${service.iconClass}`}
                 >
-                  <Icon
-                    size={30}
-                    strokeWidth={1.8}
-                  />
+                  <Icon size={30} strokeWidth={1.8} />
                 </div>
-
                 <h3>{service.title}</h3>
               </button>
             );
           })}
-
         </div>
-
       </section>
-
 
       {/* =========================================
           BUS FORM
       ========================================= */}
-
       {activeService?.id === "bus" && (
         <section className="home-service-form">
-
           <div className="home-service-card">
-
             <div className="home-service-title">
               <Bus size={27} />
               <div>
@@ -304,64 +269,46 @@ function Home() {
             </div>
 
             <div className="home-form-fields">
-
               <div className="home-form-field">
                 <label>FROM</label>
-
                 <div className="home-form-input">
                   <MapPin size={18} />
-
                   <input
                     type="text"
                     placeholder="Enter city"
                     value={busFrom}
-                    onChange={(e) =>
-                      setBusFrom(e.target.value)
-                    }
+                    onChange={(e) => setBusFrom(e.target.value)}
                   />
                 </div>
-
                 <small>India</small>
               </div>
 
-
               <div className="home-form-field">
                 <label>TO</label>
-
                 <div className="home-form-input">
                   <MapPin size={18} />
-
                   <input
                     type="text"
                     placeholder="Enter city"
                     value={busTo}
-                    onChange={(e) =>
-                      setBusTo(e.target.value)
-                    }
+                    onChange={(e) => setBusTo(e.target.value)}
                   />
                 </div>
-
                 <small>India</small>
               </div>
 
-
               <div className="home-form-field">
                 <label>TRAVEL DATE</label>
-
                 <div className="home-form-input">
                   <CalendarDays size={18} />
-
                   <input
                     type="date"
                     min={today}
                     value={busDate}
-                    onChange={(e) =>
-                      setBusDate(e.target.value)
-                    }
+                    onChange={(e) => setBusDate(e.target.value)}
                   />
                 </div>
               </div>
-
 
               <button
                 type="button"
@@ -371,24 +318,17 @@ function Home() {
                 <Search size={19} />
                 SEARCH BUSES
               </button>
-
             </div>
-
           </div>
-
         </section>
       )}
-
 
       {/* =========================================
           CAB FORM
       ========================================= */}
-
       {activeService?.id === "cab" && (
         <section className="home-service-form">
-
           <div className="home-service-card">
-
             <div className="home-service-title">
               <Car size={27} />
               <div>
@@ -397,16 +337,9 @@ function Home() {
               </div>
             </div>
 
-
             {/* CAB TABS */}
-
             <div className="home-service-tabs">
-
-              {[
-                "Outstation",
-                "Airport",
-                "Rental",
-              ].map((type) => (
+              {["Outstation", "Airport", "Rental"].map((type) => (
                 <button
                   key={type}
                   type="button"
@@ -420,37 +353,27 @@ function Home() {
                   {type}
                 </button>
               ))}
-
             </div>
 
-
             <div className="home-form-fields">
-
               <div className="home-form-field">
                 <label>FROM</label>
-
                 <div className="home-form-input">
                   <MapPin size={18} />
-
                   <input
                     type="text"
                     placeholder="Pickup location"
                     value={cabFrom}
-                    onChange={(e) =>
-                      setCabFrom(e.target.value)
-                    }
+                    onChange={(e) => setCabFrom(e.target.value)}
                   />
                 </div>
               </div>
 
-
               {cabType !== "Rental" && (
                 <div className="home-form-field">
                   <label>TO</label>
-
                   <div className="home-form-input">
                     <MapPin size={18} />
-
                     <input
                       type="text"
                       placeholder={
@@ -459,89 +382,54 @@ function Home() {
                           : "Destination"
                       }
                       value={cabTo}
-                      onChange={(e) =>
-                        setCabTo(e.target.value)
-                      }
+                      onChange={(e) => setCabTo(e.target.value)}
                     />
                   </div>
                 </div>
               )}
 
-
               <div className="home-form-field">
                 <label>DATE</label>
-
                 <div className="home-form-input">
                   <CalendarDays size={18} />
-
                   <input
                     type="date"
                     min={today}
                     value={cabDate}
-                    onChange={(e) =>
-                      setCabDate(e.target.value)
-                    }
+                    onChange={(e) => setCabDate(e.target.value)}
                   />
                 </div>
               </div>
-
 
               <div className="home-form-field">
                 <label>PICKUP TIME</label>
-
                 <div className="home-form-input">
                   <Clock size={18} />
-
                   <input
                     type="time"
                     value={cabTime}
-                    onChange={(e) =>
-                      setCabTime(e.target.value)
-                    }
+                    onChange={(e) => setCabTime(e.target.value)}
                   />
                 </div>
               </div>
 
-
               <div className="home-form-field">
                 <label>TRAVELLERS</label>
-
                 <div className="home-form-input">
                   <Users size={18} />
-
                   <select
                     value={cabTravellers}
-                    onChange={(e) =>
-                      setCabTravellers(e.target.value)
-                    }
+                    onChange={(e) => setCabTravellers(e.target.value)}
                   >
-                    <option value="1">
-                      1 Traveller
-                    </option>
-
-                    <option value="2">
-                      2 Travellers
-                    </option>
-
-                    <option value="3">
-                      3 Travellers
-                    </option>
-
-                    <option value="4">
-                      4 Travellers
-                    </option>
-
-                    <option value="5">
-                      5 Travellers
-                    </option>
-
-                    <option value="6">
-                      6+ Travellers
-                    </option>
+                    <option value="1">1 Traveller</option>
+                    <option value="2">2 Travellers</option>
+                    <option value="3">3 Travellers</option>
+                    <option value="4">4 Travellers</option>
+                    <option value="5">5 Travellers</option>
+                    <option value="6">6+ Travellers</option>
                   </select>
                 </div>
               </div>
-
 
               <button
                 type="button"
@@ -551,139 +439,82 @@ function Home() {
                 <Search size={19} />
                 SEARCH CABS
               </button>
-
             </div>
-
           </div>
-
         </section>
       )}
-
 
       {/* =========================================
           HOTEL FORM
       ========================================= */}
-
       {activeService?.id === "hotel" && (
         <section className="home-service-form">
-
           <div className="home-service-card">
-
             <div className="home-service-title">
               <Hotel size={27} />
-
               <div>
                 <h2>Hotels & Stays</h2>
                 <p>Find your perfect stay</p>
               </div>
             </div>
 
-
             <div className="home-form-fields">
-
               <div className="home-form-field">
-                <label>
-                  CITY, AREA OR HOTEL
-                </label>
-
+                <label>CITY, AREA OR HOTEL</label>
                 <div className="home-form-input">
                   <MapPin size={18} />
-
                   <input
                     type="text"
                     placeholder="Where do you want to stay?"
                     value={hotelDestination}
-                    onChange={(e) =>
-                      setHotelDestination(
-                        e.target.value
-                      )
-                    }
+                    onChange={(e) => setHotelDestination(e.target.value)}
                   />
                 </div>
               </div>
 
-
               <div className="home-form-field">
                 <label>CHECK-IN</label>
-
                 <div className="home-form-input">
                   <CalendarDays size={18} />
-
                   <input
                     type="date"
                     min={today}
                     value={hotelCheckIn}
-                    onChange={(e) =>
-                      setHotelCheckIn(
-                        e.target.value
-                      )
-                    }
+                    onChange={(e) => setHotelCheckIn(e.target.value)}
                   />
                 </div>
               </div>
 
-
               <div className="home-form-field">
                 <label>CHECK-OUT</label>
-
                 <div className="home-form-input">
                   <CalendarDays size={18} />
-
                   <input
                     type="date"
                     min={hotelCheckIn}
                     value={hotelCheckOut}
-                    onChange={(e) =>
-                      setHotelCheckOut(
-                        e.target.value
-                      )
-                    }
+                    onChange={(e) => setHotelCheckOut(e.target.value)}
                   />
                 </div>
               </div>
 
-
               <div className="home-form-field">
                 <label>GUESTS & ROOMS</label>
-
                 <div className="home-form-input">
                   <Users size={18} />
-
                   <select
                     value={hotelGuests}
-                    onChange={(e) =>
-                      setHotelGuests(
-                        e.target.value
-                      )
-                    }
+                    onChange={(e) => setHotelGuests(e.target.value)}
                   >
-                    <option>
-                      1 Adult, 1 Room
-                    </option>
-
-                    <option>
-                      2 Adults, 1 Room
-                    </option>
-
-                    <option>
-                      2 Adults, 2 Rooms
-                    </option>
-
-                    <option>
-                      3 Adults, 1 Room
-                    </option>
-
-                    <option>
-                      4 Adults, 2 Rooms
-                    </option>
-
-                    <option>
-                      2 Adults, 1 Child, 1 Room
-                    </option>
+                    <option>1 Adult, 1 Room</option>
+                    <option>2 Adults, 1 Room</option>
+                    <option>2 Adults, 2 Rooms</option>
+                    <option>3 Adults, 1 Room</option>
+                    <option>4 Adults, 2 Rooms</option>
+                    <option>2 Adults, 1 Child, 1 Room</option>
                   </select>
                 </div>
               </div>
-
 
               <button
                 type="button"
@@ -693,115 +524,69 @@ function Home() {
                 <Search size={19} />
                 SEARCH HOTELS
               </button>
-
             </div>
-
           </div>
-
         </section>
       )}
-
 
       {/* =========================================
           HOLIDAY PACKAGE FORM
       ========================================= */}
-
       {activeService?.id === "tour" && (
         <section className="home-service-form">
-
           <div className="home-service-card">
-
             <div className="home-service-title">
               <Palmtree size={27} />
-
               <div>
                 <h2>Holiday Packages</h2>
                 <p>Plan your next holiday</p>
               </div>
             </div>
 
-
             <div className="home-form-fields">
-
               <div className="home-form-field">
                 <label>DESTINATION</label>
-
                 <div className="home-form-input">
                   <MapPin size={18} />
-
                   <input
                     type="text"
                     placeholder="Where do you want to go?"
                     value={tourDestination}
-                    onChange={(e) =>
-                      setTourDestination(
-                        e.target.value
-                      )
-                    }
+                    onChange={(e) => setTourDestination(e.target.value)}
                   />
                 </div>
               </div>
 
-
               <div className="home-form-field">
                 <label>TRAVEL DATE</label>
-
                 <div className="home-form-input">
                   <CalendarDays size={18} />
-
                   <input
                     type="date"
                     min={today}
                     value={tourDate}
-                    onChange={(e) =>
-                      setTourDate(e.target.value)
-                    }
+                    onChange={(e) => setTourDate(e.target.value)}
                   />
                 </div>
               </div>
 
-
               <div className="home-form-field">
                 <label>TRAVELLERS</label>
-
                 <div className="home-form-input">
                   <Users size={18} />
-
                   <select
                     value={tourTravellers}
-                    onChange={(e) =>
-                      setTourTravellers(
-                        e.target.value
-                      )
-                    }
+                    onChange={(e) => setTourTravellers(e.target.value)}
                   >
-                    <option value="1">
-                      1 Traveller
-                    </option>
-
-                    <option value="2">
-                      2 Travellers
-                    </option>
-
-                    <option value="3">
-                      3 Travellers
-                    </option>
-
-                    <option value="4">
-                      4 Travellers
-                    </option>
-
-                    <option value="5">
-                      5 Travellers
-                    </option>
-
-                    <option value="6">
-                      6+ Travellers
-                    </option>
+                    <option value="1">1 Traveller</option>
+                    <option value="2">2 Travellers</option>
+                    <option value="3">3 Travellers</option>
+                    <option value="4">4 Travellers</option>
+                    <option value="5">5 Travellers</option>
+                    <option value="6">6+ Travellers</option>
                   </select>
                 </div>
               </div>
-
 
               <button
                 type="button"
@@ -811,151 +596,85 @@ function Home() {
                 <Search size={19} />
                 SEARCH PACKAGES
               </button>
-
             </div>
-
           </div>
-
         </section>
       )}
-
 
       {/* =========================================
           TRAVEL INSURANCE FORM
       ========================================= */}
-
       {activeService?.id === "insurance" && (
         <section className="home-service-form">
-
           <div className="home-service-card">
-
             <div className="home-service-title">
               <ShieldCheck size={27} />
-
               <div>
                 <h2>Travel Insurance</h2>
                 <p>Protect your journey</p>
               </div>
             </div>
 
-
             <div className="home-form-fields">
-
               <div className="home-form-field">
                 <label>TRIP TYPE</label>
-
                 <div className="home-form-input">
                   <Briefcase size={18} />
-
                   <select
                     value={insuranceType}
-                    onChange={(e) =>
-                      setInsuranceType(
-                        e.target.value
-                      )
-                    }
+                    onChange={(e) => setInsuranceType(e.target.value)}
                   >
-                    <option>
-                      Domestic Travel
-                    </option>
-
-                    <option>
-                      International Travel
-                    </option>
-
-                    <option>
-                      Student Travel
-                    </option>
-
-                    <option>
-                      Senior Citizen Travel
-                    </option>
+                    <option>Domestic Travel</option>
+                    <option>International Travel</option>
+                    <option>Student Travel</option>
+                    <option>Senior Citizen Travel</option>
                   </select>
                 </div>
               </div>
 
-
               <div className="home-form-field">
                 <label>DESTINATION</label>
-
                 <div className="home-form-input">
                   <MapPin size={18} />
-
                   <input
                     type="text"
                     placeholder="Enter destination"
                     value={insuranceDestination}
-                    onChange={(e) =>
-                      setInsuranceDestination(
-                        e.target.value
-                      )
-                    }
+                    onChange={(e) => setInsuranceDestination(e.target.value)}
                   />
                 </div>
               </div>
 
-
               <div className="home-form-field">
                 <label>TRAVEL DATE</label>
-
                 <div className="home-form-input">
                   <CalendarDays size={18} />
-
                   <input
                     type="date"
                     min={today}
                     value={insuranceDate}
-                    onChange={(e) =>
-                      setInsuranceDate(
-                        e.target.value
-                      )
-                    }
+                    onChange={(e) => setInsuranceDate(e.target.value)}
                   />
                 </div>
               </div>
 
-
               <div className="home-form-field">
                 <label>TRAVELLERS</label>
-
                 <div className="home-form-input">
                   <Users size={18} />
-
                   <select
                     value={insuranceTravellers}
-                    onChange={(e) =>
-                      setInsuranceTravellers(
-                        e.target.value
-                      )
-                    }
+                    onChange={(e) => setInsuranceTravellers(e.target.value)}
                   >
-                    <option value="1">
-                      1 Traveller
-                    </option>
-
-                    <option value="2">
-                      2 Travellers
-                    </option>
-
-                    <option value="3">
-                      3 Travellers
-                    </option>
-
-                    <option value="4">
-                      4 Travellers
-                    </option>
-
-                    <option value="5">
-                      5 Travellers
-                    </option>
-
-                    <option value="6">
-                      6+ Travellers
-                    </option>
+                    <option value="1">1 Traveller</option>
+                    <option value="2">2 Travellers</option>
+                    <option value="3">3 Travellers</option>
+                    <option value="4">4 Travellers</option>
+                    <option value="5">5 Travellers</option>
+                    <option value="6">6+ Travellers</option>
                   </select>
                 </div>
               </div>
-
 
               <button
                 type="button"
@@ -965,146 +684,137 @@ function Home() {
                 <Search size={19} />
                 SEARCH INSURANCE
               </button>
-
             </div>
-
           </div>
-
         </section>
       )}
 
-
-      {/* =========================================
+      {/* =========================================================
           POPULAR DESTINATIONS
-      ========================================= */}
-
+      ========================================================= */}
       <section className="destinations-section">
-
         <div className="section-container">
-
+          {/* SECTION HEADER */}
           <div className="section-header">
-
-            <div>
-              <span className="section-label">
-                EXPLORE THE WORLD
-              </span>
-
-              <h2>
-                Popular Destinations
-              </h2>
+            <div className="section-header-left">
+              <span className="section-label">EXPLORE THE WORLD</span>
+              <h2>Popular Destinations</h2>
+              <p className="section-subtitle">
+                Discover amazing places and plan your perfect holiday with our
+                handpicked travel packages.
+              </p>
             </div>
-
 
             <div className="destinations-footer">
-
-              <Link
-                to="/tours"
-                className="view-all-button"
-              >
+              <Link to="/tours" className="view-all-button">
                 View All Destinations
-                <ArrowRight size={18} />
+                <ArrowRight size={17} />
               </Link>
-
             </div>
-
           </div>
 
-
+          {/* DESTINATION CARDS */}
           <div className="destinations-grid">
-
             {destinations.map((destination) => (
-              <Link
-                key={destination.id}
-                to={`/tours?destination=${encodeURIComponent(
-                  destination.name
-                )}`}
-                className="destination-card"
-              >
+              <article key={destination.id} className="destination-card">
+                {/* DESTINATION IMAGE */}
+                <Link
+                  to={`/tours?destination=${encodeURIComponent(
+                    destination.name
+                  )}`}
+                  className="destination-main-link"
+                >
+                  <div className="destination-image-wrapper">
+                    <img
+                      src={destination.image}
+                      alt={`${destination.name} travel destination`}
+                      className="destination-image"
+                      loading="lazy"
+                    />
+                    <div className="destination-image-overlay" />
 
-                <div className="destination-image-wrapper">
-
-                  <img
-                    src={destination.image}
-                    alt={destination.name}
-                    className="destination-image"
-                  />
-
-                  <div className="destination-image-overlay" />
-
-                  <span className="destination-country">
-                    {destination.country}
-                  </span>
-
-                  {destination.rating && (
-                    <span className="destination-rating">
-                      ★ {destination.rating}
+                    {/* COUNTRY */}
+                    <span className="destination-country">
+                      <MapPin size={11} />
+                      {destination.country}
                     </span>
-                  )}
 
-                </div>
+                    {/* RATING */}
+                    {destination.rating && (
+                      <span className="destination-rating">
+                        <span className="rating-star">★</span>
+                        {destination.rating}
+                        {destination.reviews && (
+                          <span className="rating-reviews">
+                            ({destination.reviews})
+                          </span>
+                        )}
+                      </span>
+                    )}
+                  </div>
+                </Link>
 
-
+                {/* CARD CONTENT */}
                 <div className="destination-content">
-
                   <div className="destination-info">
+                    {/* DESTINATION NAME */}
+                    <Link
+                      to={`/tours?destination=${encodeURIComponent(
+                        destination.name
+                      )}`}
+                      className="destination-title-link"
+                    >
+                      <h3>{destination.name}</h3>
+                    </Link>
 
-                    <h3>
-                      {destination.name}
-                    </h3>
-
-                    <p>
+                    {/* DESCRIPTION */}
+                    <p className="destination-description">
                       {destination.description}
                     </p>
 
-
+                    {/* DURATION */}
                     {destination.duration && (
                       <div className="destination-duration">
-                        🕐 {destination.duration}
+                        <Clock size={14} />
+                        <span>{destination.duration}</span>
                       </div>
                     )}
 
-
+                    {/* PRICE + VIEW TOUR */}
                     {destination.price && (
-                      <div className="destination-price">
-
-                        <span className="destination-price-current">
-                          ₹
-                          {destination.price.toLocaleString(
-                            "en-IN"
-                          )}
-                        </span>
-
-                        {destination.oldPrice && (
-                          <span className="destination-price-old">
-                            ₹
-                            {destination.oldPrice.toLocaleString(
-                              "en-IN"
-                            )}
+                      <div className="destination-price-row">
+                        <div className="destination-price">
+                          <span className="destination-price-current">
+                            ₹{destination.price.toLocaleString("en-IN")}
                           </span>
-                        )}
 
+                          {destination.oldPrice && (
+                            <span className="destination-price-old">
+                              ₹{destination.oldPrice.toLocaleString("en-IN")}
+                            </span>
+                          )}
+                        </div>
+
+                        <Link
+                          to={`/tours?destination=${encodeURIComponent(
+                            destination.name
+                          )}`}
+                          className="destination-view-button"
+                        >
+                          View Tour
+                          <ArrowRight size={14} />
+                        </Link>
                       </div>
                     )}
-
                   </div>
-
-
-                  <span className="destination-view-button">
-                    View Tour
-                    <ArrowRight size={16} />
-                  </span>
+                  <TravelContact destinationName={destination.name} />
 
                 </div>
-
-              </Link>
+              </article>
             ))}
-
           </div>
-
         </div>
-
       </section>
-
     </main>
   );
 }

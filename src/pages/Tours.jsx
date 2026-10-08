@@ -1,6 +1,13 @@
 import "./Tour.css";
-import { Link, useSearchParams } from "react-router-dom";
+
 import {
+  Link,
+  useSearchParams,
+  useNavigate,
+} from "react-router-dom";
+
+import {
+  ArrowLeft,
   Star,
   Clock,
   MapPin,
@@ -8,32 +15,44 @@ import {
 } from "lucide-react";
 
 import tours from "../data/tours";
-
+import TravelContact from "../components/TravelContact";
 
 function Tours() {
+  const navigate = useNavigate();
 
   const [searchParams] = useSearchParams();
 
   const destinationFilter =
     searchParams.get("destination");
 
-
   const filteredTours = destinationFilter
     ? tours.filter(
         (tour) =>
-          tour.destination.toLowerCase() ===
+          tour.destination?.toLowerCase() ===
           destinationFilter.toLowerCase()
       )
     : tours;
-
 
   return (
     <main className="tours-page">
 
       {/* =========================================
+          BACK BUTTON
+      ========================================= */}
+      <div className="tours-back-wrapper">
+        <button
+          type="button"
+          className="tours-back-btn"
+          onClick={() => navigate("/")}
+        >
+          <ArrowLeft size={16} />
+          <span>Back</span>
+        </button>
+      </div>
+
+      {/* =========================================
           PAGE HEADER
       ========================================= */}
-
       <section className="tours-header">
 
         <div className="tours-header-container">
@@ -56,18 +75,14 @@ function Tours() {
 
       </section>
 
-
       {/* =========================================
           TOURS CONTENT
       ========================================= */}
-
       <section className="tours-section">
 
         <div className="tours-container">
 
-
           {/* FILTER RESULT */}
-
           <div className="tours-topbar">
 
             <div>
@@ -86,7 +101,6 @@ function Tours() {
 
           </div>
 
-
           {/* =========================================
               TOUR GRID
           ========================================= */}
@@ -97,44 +111,62 @@ function Tours() {
 
               {filteredTours.map((tour) => (
 
-                <Link
+                <article
                   key={tour.id}
-                  to={`/tours/${tour.id}`}
                   className="tour-card"
                 >
 
-                  {/* IMAGE */}
+                  {/* =================================
+                      IMAGE
+                  ================================= */}
 
-                  <div className="tour-card-image">
+                  <Link
+                    to={`/tours/${tour.id}`}
+                    className="tour-image-link"
+                  >
 
-                    <img
-                      src={tour.image}
-                      alt={tour.name}
-                    />
+                    <div className="tour-card-image">
+  <img
+    src={tour.image}
+    alt={tour.name}
+  />
+
+  <div className="tour-image-overlay" />
+
+  {/* COUNTRY BADGE — HOME CARD STYLE */}
+  <span className="tour-country">
+    <MapPin size={11} />
+    <span>{tour.country}</span>
+  </span>
+
+  {/* RATING BADGE — HOME CARD STYLE */}
+  <span className="tour-rating">
+    <Star
+      size={13}
+      fill="currentColor"
+    />
+
+    <strong>{tour.rating}</strong>
+
+    {tour.reviews != null && (
+      <span className="tour-rating-reviews">
+        ({tour.reviews})
+      </span>
+    )}
+  </span>
+</div>
+                    
+
+                  </Link>
 
 
-                    <span className="tour-country">
-                      {tour.country}
-                    </span>
-
-
-                    <span className="tour-rating">
-
-                      <Star
-                        size={13}
-                        fill="currentColor"
-                      />
-
-                      {tour.rating}
-
-                    </span>
-
-                  </div>
-
-
-                  {/* CONTENT */}
+                  {/* =================================
+                      CONTENT
+                  ================================= */}
 
                   <div className="tour-card-content">
+
+                    {/* LOCATION */}
 
                     <div className="tour-location">
 
@@ -147,10 +179,21 @@ function Tours() {
                     </div>
 
 
-                    <h3>
-                      {tour.name}
-                    </h3>
+                    {/* TOUR NAME */}
 
+                    <Link
+                      to={`/tours/${tour.id}`}
+                      className="tour-title-link"
+                    >
+
+                      <h3>
+                        {tour.name}
+                      </h3>
+
+                    </Link>
+
+
+                    {/* DESCRIPTION */}
 
                     <p className="tour-description">
                       {tour.description}
@@ -161,7 +204,7 @@ function Tours() {
 
                     <div className="tour-duration">
 
-                      <Clock size={15} />
+                      <Clock size={14} />
 
                       <span>
                         {tour.duration}
@@ -170,11 +213,13 @@ function Tours() {
                     </div>
 
 
-                    {/* BOTTOM */}
+                    {/* =================================
+                        PRICE + VIEW TOUR
+                    ================================= */}
 
-                    <div className="tour-card-bottom">
+                    <div className="tour-price-row">
 
-                      <div>
+                      <div className="tour-price-wrapper">
 
                         <span className="starting-from">
                           Starting from
@@ -182,46 +227,58 @@ function Tours() {
 
                         <div className="tour-price">
 
-                          ₹{tour.price.toLocaleString("en-IN")}
-
-                          <span>
-                            ₹{tour.oldPrice.toLocaleString(
+                          <span className="tour-price-current">
+                            ₹
+                            {tour.price.toLocaleString(
                               "en-IN"
                             )}
                           </span>
+
+                          {tour.oldPrice && (
+                            <span className="tour-price-old">
+                              ₹
+                              {tour.oldPrice.toLocaleString(
+                                "en-IN"
+                              )}
+                            </span>
+                          )}
 
                         </div>
 
                       </div>
 
 
-                      <span className="tour-arrow">
+                      {/* VIEW TOUR */}
 
-                        <ArrowRight size={18} />
+                      <Link
+                        to={`/tours/${tour.id}`}
+                        className="tour-view-button"
+                      >
 
-                      </span>
+                        <span>
+                          View Tour
+                        </span>
 
-                    </div>
+                        <ArrowRight size={14} />
 
-
-                    <div className="tour-reviews">
-
-                      <Star
-                        size={13}
-                        fill="currentColor"
-                      />
-
-                      {tour.rating}
-
-                      <span>
-                        ({tour.reviews} reviews)
-                      </span>
+                      </Link>
 
                     </div>
+
+
+                    {/* =================================
+                        CALL + REQUEST CALLBACK
+                    ================================= */}
+
+                    <TravelContact
+                      destinationName={
+                        tour.destination || tour.name
+                      }
+                    />
 
                   </div>
 
-                </Link>
+                </article>
 
               ))}
 
@@ -262,6 +319,5 @@ function Tours() {
     </main>
   );
 }
-
 
 export default Tours;

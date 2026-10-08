@@ -161,7 +161,7 @@ function addDays(dateString, days) {
 // COMPONENT
 // ======================================================
 
-function Search() {
+function BusResult() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -1223,4 +1223,4 @@ function Search() {
   );
 }
 
-export default Search;
+export default BusResult;

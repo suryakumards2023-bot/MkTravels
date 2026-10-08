@@ -5,11 +5,12 @@ import MainLayout from "./layouts/MainLayout";
 import Home from "./pages/Home";
 import Tours from "./pages/Tours";
 import TourDetails from "./pages/TourDetails";
-import Search from "./pages/Search";
+
 import Booking from "./pages/Booking";
 import Payment from "./pages/Payment";
 import MyBookings from "./pages/MyBookings";
 import BookingDetails from "./pages/BookingDetails";
+import BusResult from "./pages/BusResult";
 import CabResults from "./pages/CabResults";
 import HotelResults from "./pages/HotelResults";
 import InsuranceResults from "./pages/InsuranceResults";
@@ -31,11 +32,6 @@ function App() {
           <Route
             path="/tours/:id"
             element={<TourDetails />}
-          />
-
-          <Route
-            path="/search"
-            element={<Search />}
           />
 
           <Route
@@ -62,6 +58,8 @@ function App() {
             path="/booking-details/:id"
             element={<BookingDetails />}
           />
+
+          <Route path="/bus-result" element={<BusResult />} />
 
           <Route path="/cab-results" element={<CabResults />} />
 <Route path="/hotel-results" element={<HotelResults />} />
