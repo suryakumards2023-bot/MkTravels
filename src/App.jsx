@@ -10,15 +10,16 @@ import Booking from "./pages/Booking";
 import Payment from "./pages/Payment";
 import MyBookings from "./pages/MyBookings";
 import BookingDetails from "./pages/BookingDetails";
+import CabResults from "./pages/CabResults";
+import HotelResults from "./pages/HotelResults";
+import InsuranceResults from "./pages/InsuranceResults";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
-import MyTrips from "./pages/MyTrips";
 import Profile from "./pages/Profile";
 
 function App() {
   return (
     <BrowserRouter>
-
       <Routes>
 
         <Route element={<MainLayout />}>
@@ -47,17 +48,24 @@ function App() {
             element={<Payment />}
           />
 
-          <Route path="/my-bookings" element={<MyBookings />} />
+          <Route
+            path="/my-bookings"
+            element={<MyBookings />}
+          />
 
           <Route
-  path="/my-trips"
-  element={<MyBookings />}
-/>
+            path="/my-trips"
+            element={<MyBookings />}
+          />
 
           <Route
-  path="/booking-details/:id"
-  element={<BookingDetails />}
-/>
+            path="/booking-details/:id"
+            element={<BookingDetails />}
+          />
+
+          <Route path="/cab-results" element={<CabResults />} />
+<Route path="/hotel-results" element={<HotelResults />} />
+<Route path="/insurance-results" element={<InsuranceResults />} />
 
           <Route
             path="/login"
@@ -65,13 +73,8 @@ function App() {
           />
 
           <Route
-  path="/signup"
-  element={<Signup />}
-/>
-
-          <Route
-            path="/my-trips"
-            element={<MyTrips />}
+            path="/signup"
+            element={<Signup />}
           />
 
           <Route
@@ -82,7 +85,6 @@ function App() {
         </Route>
 
       </Routes>
-
     </BrowserRouter>
   );
 }

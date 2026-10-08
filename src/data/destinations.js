@@ -22,7 +22,7 @@ const destinations = [
       "https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?auto=format&fit=crop&w=1000&q=85",
     description:
       "Mountains, snow and peaceful Himalayan adventures.",
-    rating: 4.7,
+    rating: 4.8,
     duration: "5N / 6D",
     price: 12999,
     oldPrice: 15999,

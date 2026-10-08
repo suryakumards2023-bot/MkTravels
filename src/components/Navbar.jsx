@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { User, Menu, } from "lucide-react";
-
+import "./Navbar.css";
 function Navbar() {
   return (
     <header className="navbar">
@@ -16,6 +16,15 @@ function Navbar() {
           <Link to="/search">Search</Link>
           <Link to="/my-trips">My Booking</Link>
         </nav>
+
+        <Link  
+  to="/login"  
+  className="navbar-login-btn"  
+> 
+  <span>Login</span> 
+</Link>
+
+        
 
         <div className="nav-actions">
           <Link to="/profile">

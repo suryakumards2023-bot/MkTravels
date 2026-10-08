@@ -230,6 +230,99 @@ button {
     font-size: 12px;
   }
 }
+
+.home-bus-booking {
+  width: 100%;
+  max-width: 1050px;
+  margin: 0 auto 35px;
+  padding: 0 20px;
+}
+
+.home-bus-booking-card {
+  background: #ffffff;
+  border: 1px solid #e4e7eb;
+  border-radius: 14px;
+  padding: 24px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+}
+
+.home-bus-booking-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 22px;
+}
+
+.home-bus-booking-title h2 {
+  margin: 0;
+  font-size: 22px;
+  color: #222;
+}
+
+.home-bus-search-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr auto;
+  gap: 14px;
+  align-items: end;
+}
+
+.home-bus-field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.home-bus-field label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #444;
+}
+
+.home-bus-field input {
+  height: 44px;
+  padding: 0 12px;
+  border: 1px solid #d9dde3;
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+}
+
+.home-bus-field input:focus {
+  border-color: #2563eb;
+}
+
+.home-bus-field span {
+  font-size: 11px;
+  color: #777;
+  margin-top: -4px;
+}
+
+.home-bus-search-btn {
+  height: 44px;
+  padding: 0 25px;
+  border: none;
+  border-radius: 8px;
+  background: #2563eb;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.home-bus-search-btn:hover {
+  background: #1d4ed8;
+}
+
+@media (max-width: 768px) {
+  .home-bus-search-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .home-bus-search-btn {
+    width: 100%;
+  }
+}
+
 /* =========================================
    POPULAR DESTINATIONS
 ========================================= */
@@ -565,3 +658,204 @@ button {
     color 0.2s ease,
     background 0.2s ease;
 }
+
+.home-service-form {
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto 35px;
+  padding: 0 20px;
+}
+
+.home-service-card {
+  background: #ffffff;
+  border: 1px solid #e1e5ea;
+  border-radius: 15px;
+  padding: 24px;
+  box-shadow: 0 5px 18px rgba(0, 0, 0, 0.08);
+}
+
+.home-service-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.home-service-title svg {
+  color: #2563eb;
+  flex-shrink: 0;
+}
+
+.home-service-title h2 {
+  margin: 0;
+  font-size: 22px;
+  color: #172033;
+}
+
+.home-service-title p {
+  margin: 4px 0 0;
+  color: #777;
+  font-size: 13px;
+}
+
+.home-service-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid #eeeeee;
+}
+
+.home-service-tab {
+  border: none;
+  background: transparent;
+  padding: 11px 20px;
+  color: #555;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.home-service-tab.active {
+  color: #1688e8;
+  border-bottom: 3px solid #1688e8;
+}
+
+.home-form-fields {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 13px;
+  align-items: end;
+}
+
+.home-form-field {
+  min-width: 0;
+}
+
+.home-form-field label {
+  display: block;
+  margin-bottom: 6px;
+  color: #555;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.home-form-field small {
+  display: block;
+  margin-top: 4px;
+  color: #888;
+  font-size: 10px;
+}
+
+.home-form-input {
+  height: 46px;
+
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  padding: 0 11px;
+
+  background: #ffffff;
+  border: 1px solid #d7dce2;
+  border-radius: 8px;
+}
+
+.home-form-input:focus-within {
+  border-color: #2563eb;
+}
+
+.home-form-input svg {
+  flex-shrink: 0;
+  color: #777;
+}
+
+.home-form-input input,
+.home-form-input select {
+  width: 100%;
+  height: 100%;
+
+  border: none;
+  outline: none;
+
+  background: transparent;
+
+  color: #222;
+  font-size: 13px;
+}
+
+.home-search-btn {
+  height: 46px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+
+  padding: 0 20px;
+
+  border: none;
+  border-radius: 8px;
+
+  background: linear-gradient(
+    90deg,
+    #1688e8,
+    #1268e8
+  );
+
+  color: #ffffff;
+
+  font-size: 13px;
+  font-weight: 700;
+
+  cursor: pointer;
+
+  white-space: nowrap;
+}
+
+.home-search-btn:hover {
+  background: #1268e8;
+}
+
+@media (max-width: 900px) {
+  .travel-services {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .home-form-fields {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .travel-services {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .travel-service-card {
+    min-height: 110px;
+  }
+
+  .home-form-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .home-service-card {
+    padding: 18px;
+  }
+}
+
+.travel-services-container {
+  width: 100%;
+  max-width: 1100px;
+  margin: 28px auto 25px;
+  padding: 0 20px;
+}
+
+.travel-services {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 14px;
+}
+
+
