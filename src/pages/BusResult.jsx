@@ -19,7 +19,7 @@ import {
   X,
 } from "lucide-react";
 
-import "./Search.css";
+import "./BusResult.css";
 
 
 // ======================================================
@@ -164,6 +164,29 @@ function addDays(dateString, days) {
 function BusResult() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+
+  
+  const handleSelectBus = (bus) => {
+    const bookingParams = new URLSearchParams({
+      id: String(bus.id),
+      name: bus.name,
+      subtitle: bus.subtitle,
+      price: String(bus.priceMin),
+      rating: String(bus.rating),
+      ac: String(bus.ac),
+      seatType: bus.seatType,
+      departure: bus.departure,
+      arrival: bus.arrival,
+      duration: bus.duration,
+      from,
+      to,
+      date: selectedDate,
+    });
+
+    navigate(`/bus-booking?${bookingParams.toString()}`);
+  };
+
+
 
   const urlType = searchParams.get("type");
   const urlFrom = searchParams.get("from") || "";
@@ -1149,9 +1172,7 @@ function BusResult() {
                       <button
                         type="button"
                         onClick={() =>
-                          alert(
-                            `${bus.name} selected`
-                          )
+                          handleSelectBus(bus)
                         }
                       >
                         View buses

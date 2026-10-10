@@ -1,441 +1,456 @@
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { useMemo, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
-  Hotel,
-  MapPin,
-  CalendarDays,
-  Users,
-  Search,
-  ArrowLeft,
-  Star,
-  ChevronDown,
+  ArrowLeft, MapPin, CalendarDays, Users, Search, Star,
+  Wifi, Coffee, CarFront, Waves, SlidersHorizontal, ShieldCheck,
+  Heart, ChevronDown, Hotel, RotateCcw
 } from "lucide-react";
-
 import "./HotelResults.css";
 
-const hotelList = [
+const hotels = [
   {
-    id: 1,
+    id: "grand-palace",
     name: "The Grand Palace",
     location: "City Center",
     rating: 4.7,
     reviews: 1240,
     price: 2499,
     oldPrice: 3299,
-    image:
-      "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=700&q=80",
-    features: ["Free WiFi", "Breakfast", "AC"],
+    stars: 5,
+    type: "Hotel",
+    badge: "Popular choice",
+    images: [
+      "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=900",
+      "https://images.unsplash.com/photo-1582719508461-905c673771fd?w=900",
+      "https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=900",
+      "https://images.unsplash.com/photo-1564501049412-61c2a3083791?w=900",
+    ],
+    features: ["Free WiFi", "Breakfast", "Air conditioning"],
+    description: "A comfortable premium stay with modern rooms and convenient access to popular attractions.",
   },
   {
-    id: 2,
+    id: "royal-comfort",
     name: "Royal Comfort Hotel",
     location: "Main Market",
     rating: 4.5,
     reviews: 876,
     price: 1899,
     oldPrice: 2499,
-    image:
-      "https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?auto=format&fit=crop&w=700&q=80",
-    features: ["Free WiFi", "Parking", "AC"],
+    stars: 4,
+    type: "Hotel",
+    badge: "Value for money",
+    images: [
+      "https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=900",
+      "https://images.unsplash.com/photo-1611892440504-42a792e24d32?w=900",
+      "https://images.unsplash.com/photo-1590490360182-c33d57733427?w=900",
+      "https://images.unsplash.com/photo-1566665797739-1674de7a421a?w=900",
+    ],
+    features: ["Free WiFi", "Parking", "Air conditioning"],
+    description: "A practical and welcoming hotel close to shopping, dining and local transport.",
   },
   {
-    id: 3,
-    name: "Holiday Inn",
+    id: "holiday-inn",
+    name: "Holiday Inn Resort",
     location: "Near Tourist Area",
     rating: 4.8,
     reviews: 1560,
     price: 3299,
     oldPrice: 4199,
-    image:
-      "https://images.unsplash.com/photo-1601890944667-3f7c9c1a7e8c?auto=format&fit=crop&w=700&q=80",
-    features: ["Pool", "Breakfast", "Free WiFi"],
+    stars: 5,
+    type: "Resort",
+    badge: "Top rated",
+    images: [
+      "https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=900",
+      "https://images.unsplash.com/photo-1578683010236-d716f9a3f461?w=900",
+      "https://images.unsplash.com/photo-1564501049412-61c2a3083791?w=900",
+      "https://images.unsplash.com/photo-1582719508461-905c673771fd?w=900",
+    ],
+    features: ["Swimming pool", "Breakfast", "Free WiFi"],
+    description: "A relaxing resort-style property with leisure facilities and spacious guest rooms.",
   },
 ];
 
+const formatPrice = (price) => Number(price || 0).toLocaleString("en-IN");
+
 function HotelResults() {
-  const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  const destination =
-    searchParams.get("destination") || "";
+  const [destination, setDestination] = useState(searchParams.get("destination") || "");
+  const [checkIn, setCheckIn] = useState(searchParams.get("checkIn") || "");
+  const [checkOut, setCheckOut] = useState(searchParams.get("checkOut") || "");
+  const [guests, setGuests] = useState(searchParams.get("guests") || "2 Adults, 1 Room");
 
-  const checkIn =
-    searchParams.get("checkIn") || "";
+  const [propertyTypes, setPropertyTypes] = useState([]);
+  const [starRatings, setStarRatings] = useState([]);
+  const [priceFilter, setPriceFilter] = useState("all");
+  const [sortBy, setSortBy] = useState("recommended");
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const [favorites, setFavorites] = useState([]);
 
-  const checkOut =
-    searchParams.get("checkOut") || "";
+  const nights = useMemo(() => {
+    if (!checkIn || !checkOut) return 1;
+    const start = new Date(`${checkIn}T00:00:00`);
+    const end = new Date(`${checkOut}T00:00:00`);
+    const difference = Math.ceil((end - start) / 86400000);
+    return difference > 0 ? difference : 1;
+  }, [checkIn, checkOut]);
 
-  const guests =
-    searchParams.get("guests") || "2 Adults, 1 Room";
+  const handleSearch = (event) => {
+    event.preventDefault();
 
-  const handleSearch = () => {
-    if (!destination) {
-      alert("Please enter city, area or property");
+    if (!destination.trim()) {
+      window.alert("Please enter a destination.");
       return;
     }
-
     if (!checkIn || !checkOut) {
-      alert("Please select check-in and check-out dates");
+      window.alert("Please select check-in and check-out dates.");
       return;
     }
-
     if (checkOut <= checkIn) {
-      alert("Check-out date must be after check-in date");
+      window.alert("Check-out date must be after check-in date.");
       return;
     }
 
     setSearchParams({
-      destination,
+      destination: destination.trim(),
       checkIn,
       checkOut,
       guests,
     });
   };
 
-  const handleModifySearch = () => {
-    navigate(
-      `/?service=hotel&destination=${encodeURIComponent(
-        destination
-      )}&checkIn=${encodeURIComponent(
-        checkIn
-      )}&checkOut=${encodeURIComponent(
-        checkOut
-      )}&guests=${encodeURIComponent(guests)}`
+  const toggleArrayValue = (value, values, setter) => {
+    setter(values.includes(value)
+      ? values.filter((item) => item !== value)
+      : [...values, value]);
+  };
+
+  const resetFilters = () => {
+    setPropertyTypes([]);
+    setStarRatings([]);
+    setPriceFilter("all");
+    setSortBy("recommended");
+  };
+
+  const filteredHotels = useMemo(() => {
+    let result = hotels.filter((hotel) => {
+      const matchesType = propertyTypes.length === 0 || propertyTypes.includes(hotel.type);
+      const matchesStars = starRatings.length === 0 || starRatings.includes(hotel.stars);
+      const matchesPrice =
+        priceFilter === "all" ||
+        (priceFilter === "under2000" && hotel.price < 2000) ||
+        (priceFilter === "2000to3000" && hotel.price >= 2000 && hotel.price <= 3000) ||
+        (priceFilter === "above3000" && hotel.price > 3000);
+
+      return matchesType && matchesStars && matchesPrice;
+    });
+
+    if (sortBy === "priceLow") result = [...result].sort((a, b) => a.price - b.price);
+    if (sortBy === "priceHigh") result = [...result].sort((a, b) => b.price - a.price);
+    if (sortBy === "rating") result = [...result].sort((a, b) => b.rating - a.rating);
+
+    return result;
+  }, [propertyTypes, starRatings, priceFilter, sortBy]);
+
+  const openHotel = (hotel) => {
+    const params = new URLSearchParams({
+      hotelId: hotel.id,
+      hotelName: hotel.name,
+      name: hotel.name,
+      location: hotel.location,
+      destination,
+      price: String(hotel.price),
+      oldPrice: String(hotel.oldPrice),
+      rating: String(hotel.rating),
+      reviews: String(hotel.reviews),
+      stars: String(hotel.stars),
+      type: hotel.type,
+      checkIn,
+      checkOut,
+      guests,
+      images: JSON.stringify(hotel.images),
+      description: hotel.description,
+      features: JSON.stringify(hotel.features),
+    });
+
+    navigate(`/hotel-details?${params.toString()}`);
+  };
+
+  const toggleFavorite = (id) => {
+    setFavorites((current) =>
+      current.includes(id) ? current.filter((item) => item !== id) : [...current, id]
     );
   };
 
   return (
-    <div className="hotel-results-page">
+    <main className="hotel-results-page">
       <div className="hotel-results-container">
-
-        {/* BACK */}
-        <button
-          type="button"
-          className="hotel-back-btn"
-          onClick={() => navigate("/")}
-        >
-          <ArrowLeft size={17} />
-          Back
+        <button className="hotel-back-button" onClick={() => navigate(-1)} type="button">
+          <ArrowLeft size={18} /> Back
         </button>
 
-        {/* ================= HOTEL SEARCH ================= */}
-        <div className="hotel-search-box">
-
-          {/* Destination */}
-          <div className="hotel-search-field destination-field">
-            <label>CITY, AREA or PROPERTY</label>
-
-            <div className="hotel-field-value">
-              <MapPin size={18} />
-
-              <input
-                type="text"
-                value={destination}
-                placeholder="Enter city, area or property"
-                onChange={(e) =>
-                  setSearchParams({
-                    destination: e.target.value,
-                    checkIn,
-                    checkOut,
-                    guests,
-                  })
-                }
-              />
+        <section className="hotel-search-panel">
+          <div className="hotel-search-title">
+            <span className="hotel-title-icon"><Hotel size={21} /></span>
+            <div>
+              <h1>Find your perfect stay</h1>
+              <p>Compare stays, prices and amenities in one place.</p>
             </div>
           </div>
 
-          {/* Check In */}
-          <div className="hotel-search-field">
-            <label>CHECK-IN</label>
+          <form className="hotel-search-form" onSubmit={handleSearch}>
+            <label className="hotel-search-field hotel-destination-field">
+              <MapPin size={19} />
+              <span>
+                <small>DESTINATION</small>
+                <input
+                  value={destination}
+                  onChange={(e) => setDestination(e.target.value)}
+                  placeholder="City, area or hotel"
+                  aria-label="Destination"
+                />
+              </span>
+            </label>
 
-            <div className="hotel-field-value">
-              <CalendarDays size={17} />
+            <label className="hotel-search-field">
+              <CalendarDays size={19} />
+              <span>
+                <small>CHECK-IN</small>
+                <input
+                  type="date"
+                  value={checkIn}
+                  min={new Date().toISOString().slice(0, 10)}
+                  onChange={(e) => setCheckIn(e.target.value)}
+                  aria-label="Check-in date"
+                />
+              </span>
+            </label>
 
-              <input
-                type="date"
-                value={checkIn}
-                onChange={(e) =>
-                  setSearchParams({
-                    destination,
-                    checkIn: e.target.value,
-                    checkOut,
-                    guests,
-                  })
-                }
-              />
-            </div>
-          </div>
+            <label className="hotel-search-field">
+              <CalendarDays size={19} />
+              <span>
+                <small>CHECK-OUT</small>
+                <input
+                  type="date"
+                  value={checkOut}
+                  min={checkIn || new Date().toISOString().slice(0, 10)}
+                  onChange={(e) => setCheckOut(e.target.value)}
+                  aria-label="Check-out date"
+                />
+              </span>
+            </label>
 
-          {/* Check Out */}
-          <div className="hotel-search-field">
-            <label>CHECK-OUT</label>
+            <label className="hotel-search-field">
+              <Users size={19} />
+              <span>
+                <small>GUESTS & ROOMS</small>
+                <select value={guests} onChange={(e) => setGuests(e.target.value)}>
+                  <option>1 Adult, 1 Room</option>
+                  <option>2 Adults, 1 Room</option>
+                  <option>3 Adults, 1 Room</option>
+                  <option>2 Adults, 2 Rooms</option>
+                  <option>4 Adults, 2 Rooms</option>
+                  <option>Family, 1 Room</option>
+                </select>
+              </span>
+              <ChevronDown size={14} />
+            </label>
 
-            <div className="hotel-field-value">
-              <CalendarDays size={17} />
+            <button className="hotel-search-submit" type="submit">
+              <Search size={18} /> SEARCH
+            </button>
+          </form>
+        </section>
 
-              <input
-                type="date"
-                value={checkOut}
-                onChange={(e) =>
-                  setSearchParams({
-                    destination,
-                    checkIn,
-                    checkOut: e.target.value,
-                    guests,
-                  })
-                }
-              />
-            </div>
-          </div>
-
-          {/* Guests */}
-          <div className="hotel-search-field">
-            <label>ROOMS & GUESTS</label>
-
-            <div className="hotel-field-value">
-              <Users size={17} />
-
-              <select
-                value={guests}
-                onChange={(e) =>
-                  setSearchParams({
-                    destination,
-                    checkIn,
-                    checkOut,
-                    guests: e.target.value,
-                  })
-                }
-              >
-                <option value="1 Adult, 1 Room">
-                  1 Adult, 1 Room
-                </option>
-
-                <option value="2 Adults, 1 Room">
-                  2 Adults, 1 Room
-                </option>
-
-                <option value="2 Adults, 2 Rooms">
-                  2 Adults, 2 Rooms
-                </option>
-
-                <option value="3 Adults, 1 Room">
-                  3 Adults, 1 Room
-                </option>
-
-                <option value="4 Adults, 2 Rooms">
-                  4 Adults, 2 Rooms
-                </option>
-
-                <option value="4 Adults, 3 Rooms">
-                  4 Adults, 3 Rooms
-                </option>
-              </select>
-
-              <ChevronDown size={15} />
-            </div>
-          </div>
-
-          {/* Search */}
-          <button
-            type="button"
-            className="hotel-search-main-btn"
-            onClick={handleSearch}
-          >
-            <Search size={18} />
-            SEARCH
-          </button>
-        </div>
-
-        {/* ================= HEADER ================= */}
-        <div className="hotel-result-top">
-
+        <div className="hotel-results-heading">
           <div>
-            <h1>
-              Hotels in{" "}
-              {destination || "Your Destination"}
-            </h1>
-
+            <div className="hotel-breadcrumb">Home <span>/</span> Hotels <span>/</span> Results</div>
+            <h2>Hotels in {destination || "your destination"}</h2>
             <p>
-              {checkIn || "Check-in"} →{" "}
-              {checkOut || "Check-out"} • {guests}
+              {checkIn || "Select check-in"} <span>→</span> {checkOut || "Select check-out"}
+              <i /> {guests}
             </p>
           </div>
-
-          <button
-            type="button"
-            className="hotel-modify-btn"
-            onClick={handleModifySearch}
-          >
-            Modify Search
-          </button>
+          <div className="hotel-trust-chip"><ShieldCheck size={17} /> Trusted stays</div>
         </div>
 
-        {/* ================= RESULTS ================= */}
         <div className="hotel-results-layout">
-
-          {/* FILTER */}
-          <aside className="hotel-filter-box">
-
-            <h3>Filters</h3>
-
-            <div className="hotel-filter-section">
-              <h4>Property Type</h4>
-
-              <label>
-                <input type="checkbox" />
-                Hotel
-              </label>
-
-              <label>
-                <input type="checkbox" />
-                Resort
-              </label>
-
-              <label>
-                <input type="checkbox" />
-                Guest House
-              </label>
+          <aside className={`hotel-filter-sidebar ${mobileFiltersOpen ? "filters-open" : ""}`}>
+            <div className="hotel-filter-heading">
+              <div><SlidersHorizontal size={18} /><strong>Filters</strong></div>
+              <button type="button" onClick={resetFilters}>Reset</button>
             </div>
 
-            <hr />
-
             <div className="hotel-filter-section">
-              <h4>Star Rating</h4>
-
-              <label>
-                <input type="checkbox" />
-                5 Star
-              </label>
-
-              <label>
-                <input type="checkbox" />
-                4 Star
-              </label>
-
-              <label>
-                <input type="checkbox" />
-                3 Star
-              </label>
+              <h3>Property type</h3>
+              {["Hotel", "Resort"].map((type) => (
+                <label className="hotel-filter-option" key={type}>
+                  <input
+                    type="checkbox"
+                    checked={propertyTypes.includes(type)}
+                    onChange={() => toggleArrayValue(type, propertyTypes, setPropertyTypes)}
+                  />
+                  <span>{type}</span>
+                </label>
+              ))}
             </div>
 
-            <hr />
-
             <div className="hotel-filter-section">
-              <h4>Price</h4>
-
-              <label>
-                <input type="checkbox" />
-                Under ₹2,000
-              </label>
-
-              <label>
-                <input type="checkbox" />
-                ₹2,000 - ₹3,000
-              </label>
-
-              <label>
-                <input type="checkbox" />
-                Above ₹3,000
-              </label>
+              <h3>Star rating</h3>
+              {[5, 4, 3].map((rating) => (
+                <label className="hotel-filter-option" key={rating}>
+                  <input
+                    type="checkbox"
+                    checked={starRatings.includes(rating)}
+                    onChange={() => toggleArrayValue(rating, starRatings, setStarRatings)}
+                  />
+                  <span>{rating} star</span>
+                </label>
+              ))}
             </div>
 
+            <div className="hotel-filter-section">
+              <h3>Price per night</h3>
+              {[
+                ["all", "All prices"],
+                ["under2000", "Under ₹2,000"],
+                ["2000to3000", "₹2,000 – ₹3,000"],
+                ["above3000", "Above ₹3,000"],
+              ].map(([value, label]) => (
+                <label className="hotel-filter-option" key={value}>
+                  <input
+                    type="radio"
+                    name="hotel-price"
+                    checked={priceFilter === value}
+                    onChange={() => setPriceFilter(value)}
+                  />
+                  <span>{label}</span>
+                </label>
+              ))}
+            </div>
+
+            <div className="hotel-filter-note">
+              <ShieldCheck size={18} />
+              <span>Compare prices and choose a stay that suits your trip.</span>
+            </div>
+
+            <button
+              type="button"
+              className="hotel-filter-apply"
+              onClick={() => setMobileFiltersOpen(false)}
+            >
+              Show {filteredHotels.length} stays
+            </button>
           </aside>
 
-          {/* HOTEL LIST */}
-          <main className="hotel-list">
-
-            <div className="hotel-list-heading">
-              <strong>
-                {hotelList.length} Hotels Available
-              </strong>
-
-              <button type="button">
-                Sort by: Recommended
-                <ChevronDown size={15} />
+          <section className="hotel-results-list">
+            <div className="hotel-list-toolbar">
+              <div>
+                <h3>{filteredHotels.length} stays found</h3>
+                <p>Prices shown per room, per night</p>
+              </div>
+              <div className="hotel-sort-control">
+                <label htmlFor="hotel-sort">Sort by</label>
+                <select id="hotel-sort" value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
+                  <option value="recommended">Recommended</option>
+                  <option value="priceLow">Price: Low to high</option>
+                  <option value="priceHigh">Price: High to low</option>
+                  <option value="rating">Guest rating</option>
+                </select>
+              </div>
+              <button
+                type="button"
+                className="hotel-mobile-filter-button"
+                onClick={() => setMobileFiltersOpen((open) => !open)}
+              >
+                <SlidersHorizontal size={16} /> Filters
               </button>
             </div>
 
-            {hotelList.map((hotel) => (
-              <div
-                className="hotel-result-card"
-                key={hotel.id}
-              >
+            {filteredHotels.length === 0 ? (
+              <div className="hotel-empty-state">
+                <Hotel size={38} />
+                <h3>No stays match these filters</h3>
+                <p>Try resetting the filters to see all available demo properties.</p>
+                <button type="button" onClick={resetFilters}><RotateCcw size={16} /> Reset filters</button>
+              </div>
+            ) : filteredHotels.map((hotel) => (
+              <article className="hotel-result-card" key={hotel.id}>
+                <button
+                  type="button"
+                  className={`hotel-favorite-button ${favorites.includes(hotel.id) ? "is-favorite" : ""}`}
+                  aria-label={favorites.includes(hotel.id) ? "Remove from favorites" : "Add to favorites"}
+                  onClick={() => toggleFavorite(hotel.id)}
+                >
+                  <Heart size={18} fill={favorites.includes(hotel.id) ? "currentColor" : "none"} />
+                </button>
 
-                <img
-                  src={hotel.image}
-                  alt={hotel.name}
-                />
+                <button
+                  type="button"
+                  className="hotel-card-image-button"
+                  onClick={() => openHotel(hotel)}
+                  aria-label={`View ${hotel.name}`}
+                >
+                  <img src={hotel.images[0]} alt={hotel.name} className="hotel-card-image" />
+                  <span className="hotel-photo-count">4 photos</span>
+                  <span className="hotel-image-badge">{hotel.badge}</span>
+                </button>
 
-                <div className="hotel-result-info">
+                <div className="hotel-card-info">
+                  <div className="hotel-card-type">{hotel.type} <span>·</span> {"★".repeat(hotel.stars)}</div>
+                  <button className="hotel-card-title" type="button" onClick={() => openHotel(hotel)}>
+                    {hotel.name}
+                  </button>
+                  <p className="hotel-card-location"><MapPin size={14} /> {hotel.location}{destination ? `, ${destination}` : ""}</p>
 
-                  <div className="hotel-title-row">
-
-                    <h2>{hotel.name}</h2>
-
-                    <span className="hotel-rating">
-                      <Star
-                        size={12}
-                        fill="currentColor"
-                      />
-                      {hotel.rating}
-                    </span>
-
+                  <div className="hotel-rating-line">
+                    <span className="hotel-rating-score"><Star size={13} fill="currentColor" /> {hotel.rating}</span>
+                    <span className="hotel-review-count">Excellent · {hotel.reviews.toLocaleString("en-IN")} reviews</span>
                   </div>
 
-                  <p className="hotel-location">
-                    <MapPin size={14} />
-                    {hotel.location}
-                  </p>
-
-                  <p className="hotel-reviews">
-                    {hotel.reviews.toLocaleString("en-IN")}{" "}
-                    reviews
-                  </p>
-
-                  <div className="hotel-features">
+                  <div className="hotel-amenities">
                     {hotel.features.map((feature) => (
                       <span key={feature}>
+                        {feature.toLowerCase().includes("wifi") ? <Wifi size={14} /> :
+                         feature.toLowerCase().includes("breakfast") ? <Coffee size={14} /> :
+                         feature.toLowerCase().includes("parking") ? <CarFront size={14} /> :
+                         feature.toLowerCase().includes("pool") ? <Waves size={14} /> : <ShieldCheck size={14} />}
                         {feature}
                       </span>
                     ))}
                   </div>
 
-                </div>
-
-                <div className="hotel-price-box">
-
-                  <span>1 night</span>
-
-                  <del>
-                    ₹{hotel.oldPrice.toLocaleString("en-IN")}
-                  </del>
-
-                  <strong>
-                    ₹{hotel.price.toLocaleString("en-IN")}
-                  </strong>
-
-                  <small>
-                    + taxes & fees
-                  </small>
-
-                  <button
-                    type="button"
-                    onClick={() =>
-                      alert(`${hotel.name} selected`)
-                    }
-                  >
-                    VIEW ROOM
+                  <p className="hotel-free-cancel"><ShieldCheck size={15} /> Comfortable stay · Check room details</p>
+                  <button className="hotel-view-details-link" type="button" onClick={() => openHotel(hotel)}>
+                    View hotel details <span>→</span>
                   </button>
-
                 </div>
 
-              </div>
+                <div className="hotel-card-price">
+                  <span className="hotel-deal-label">Special deal</span>
+                  <div className="hotel-old-price">₹{formatPrice(hotel.oldPrice)}</div>
+                  <div className="hotel-current-price">₹{formatPrice(hotel.price)}</div>
+                  <p>per night</p>
+                  <div className="hotel-tax-note">+ taxes & fees may apply</div>
+                  <div className="hotel-total-price">
+                    <span>{nights} night{nights !== 1 ? "s" : ""} total</span>
+                    <strong>₹{formatPrice(hotel.price * nights)}</strong>
+                  </div>
+                  <button className="hotel-view-room-button" type="button" onClick={() => openHotel(hotel)}>
+                    VIEW ROOMS <span>→</span>
+                  </button>
+                </div>
+              </article>
             ))}
 
-          </main>
+            <p className="hotel-demo-disclaimer">
+              Demo listings for website development. Prices, ratings and availability are illustrative, not live booking data.
+            </p>
+          </section>
         </div>
-
       </div>
-    </div>
+    </main>
   );
 }
 

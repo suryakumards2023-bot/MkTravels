@@ -1,3 +1,5 @@
+
+import { useMemo, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import {
   Car,
@@ -11,6 +13,8 @@ import {
   Search,
   Star,
   ChevronDown,
+  Luggage,
+  Snowflake,
 } from "lucide-react";
 
 import "./CabResults.css";
@@ -23,6 +27,8 @@ const cabList = [
     seats: 4,
     rating: 4.7,
     price: 1499,
+    image:
+      "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?auto=format&fit=crop&w=700&q=85",
     features: ["AC", "4 Seats", "Driver Included"],
   },
   {
@@ -32,6 +38,8 @@ const cabList = [
     seats: 6,
     rating: 4.8,
     price: 2199,
+    image:
+      "https://images.unsplash.com/photo-1519641471654-76ce0107ad1b?auto=format&fit=crop&w=700&q=85",
     features: ["AC", "6 Seats", "Driver Included"],
   },
   {
@@ -41,6 +49,8 @@ const cabList = [
     seats: 6,
     rating: 4.9,
     price: 2999,
+    image:
+      "https://images.unsplash.com/photo-1563720223185-11003d516935?auto=format&fit=crop&w=700&q=85",
     features: ["AC", "6 Seats", "Premium"],
   },
   {
@@ -50,6 +60,8 @@ const cabList = [
     seats: 12,
     rating: 4.8,
     price: 4999,
+    image:
+      "https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?auto=format&fit=crop&w=700&q=85",
     features: ["AC", "12 Seats", "Group Travel"],
   },
 ];
@@ -65,50 +77,131 @@ function CabResults() {
   const initialTime = searchParams.get("time") || "10:00";
   const initialTravellers = searchParams.get("travellers") || "1";
 
+  const [from, setFrom] = useState(initialFrom);
+  const [to, setTo] = useState(initialTo);
+  const [date, setDate] = useState(initialDate);
+  const [time, setTime] = useState(initialTime);
+  const [travellers, setTravellers] = useState(
+    String(Math.min(12, Math.max(1, Number(initialTravellers) || 1)))
+  );
+  const [tripType, setTripType] = useState(type);
+  const [selectedTypes, setSelectedTypes] = useState([]);
+  const [selectedPrices, setSelectedPrices] = useState([]);
+  const [minimumRating, setMinimumRating] = useState(0);
+  const [sortBy, setSortBy] = useState("recommended");
+
+  const updateSearch = () => {
+    const nextParams = new URLSearchParams({
+      type: tripType,
+      from: from.trim(),
+      to: to.trim(),
+      date,
+      time,
+      travellers,
+    });
+
+    setSearchParams(nextParams);
+  };
+
   const handleSearch = () => {
-    if (!initialFrom) {
+    if (!from.trim()) {
       alert("Please enter pickup location");
       return;
     }
 
-    if (type !== "Rental" && !initialTo) {
+    if (tripType !== "Rental" && !to.trim()) {
       alert("Please enter destination");
       return;
     }
 
-    setSearchParams({
-      type,
-      from: initialFrom,
-      to: initialTo,
-      date: initialDate,
-      time: initialTime,
-      travellers: initialTravellers,
-    });
+    updateSearch();
   };
 
   const handleModifySearch = () => {
-    navigate(
-      `/?service=cab&type=${encodeURIComponent(
-        type
-      )}&from=${encodeURIComponent(
-        initialFrom
-      )}&to=${encodeURIComponent(
-        initialTo
-      )}&date=${encodeURIComponent(
-        initialDate
-      )}&time=${encodeURIComponent(
-        initialTime
-      )}&travellers=${encodeURIComponent(
-        initialTravellers
-      )}`
+    const nextParams = new URLSearchParams({
+      service: "cab",
+      type: tripType,
+      from,
+      to,
+      date,
+      time,
+      travellers,
+    });
+
+    navigate(`/?${nextParams.toString()}`);
+  };
+
+  const handleSelectCab = (cab) => {
+    const params = new URLSearchParams({
+      id: String(cab.id),
+      name: cab.name,
+      vehicle: cab.vehicle,
+      image: cab.image,
+      seats: String(cab.seats),
+      rating: String(cab.rating),
+      price: String(cab.price),
+      type: tripType,
+      from,
+      to,
+      date,
+      time,
+      travellers,
+    });
+
+    navigate(`/cab-booking?${params.toString()}`);
+  };
+
+  const toggleFilter = (value, setter, currentValues) => {
+    setter(
+      currentValues.includes(value)
+        ? currentValues.filter((item) => item !== value)
+        : [...currentValues, value]
     );
   };
 
-  return (
-    <div className="cab-results-page">
-      <div className="cab-results-container">
+  const filteredCabs = useMemo(() => {
+    let result = cabList.filter((cab) => {
+      const matchesType =
+        selectedTypes.length === 0 ||
+        selectedTypes.some((filter) => {
+          if (filter === "Premium") {
+            return cab.name.toLowerCase().includes("premium");
+          }
 
-        {/* BACK */}
+          return cab.name === filter;
+        });
+
+      const matchesPrice =
+        selectedPrices.length === 0 ||
+        selectedPrices.some((filter) => {
+          if (filter === "under") return cab.price < 2000;
+          if (filter === "middle") {
+            return cab.price >= 2000 && cab.price <= 3000;
+          }
+          return cab.price > 3000;
+        });
+
+      return (
+        matchesType &&
+        matchesPrice &&
+        cab.rating >= minimumRating
+      );
+    });
+
+    if (sortBy === "price-low") {
+      result = [...result].sort((a, b) => a.price - b.price);
+    } else if (sortBy === "price-high") {
+      result = [...result].sort((a, b) => b.price - a.price);
+    } else if (sortBy === "rating") {
+      result = [...result].sort((a, b) => b.rating - a.rating);
+    }
+
+    return result;
+  }, [selectedTypes, selectedPrices, minimumRating, sortBy]);
+
+  return (
+    <main className="cab-results-page">
+      <div className="cab-results-container">
         <button
           type="button"
           className="cab-back-btn"
@@ -118,364 +211,324 @@ function CabResults() {
           Back
         </button>
 
-        {/* ================= SEARCH BOX ================= */}
-        <div className="cab-search-box">
-
-          {/* Trip Type */}
-          <div className="cab-search-field trip-type-field">
+        {/* Search panel */}
+        <section className="cab-search-box">
+          <div className="cab-search-field">
             <label>TRIP TYPE</label>
-
             <div className="cab-field-value">
               <Car size={18} />
-
               <select
-                value={type}
-                onChange={(e) =>
-                  setSearchParams({
-                    type: e.target.value,
-                    from: initialFrom,
-                    to: initialTo,
-                    date: initialDate,
-                    time: initialTime,
-                    travellers: initialTravellers,
-                  })
-                }
+                value={tripType}
+                onChange={(event) => setTripType(event.target.value)}
               >
                 <option value="Outstation">Outstation</option>
                 <option value="Airport">Airport</option>
                 <option value="Rental">Rental</option>
               </select>
-
               <ChevronDown size={15} />
             </div>
           </div>
 
-          {/* From */}
           <div className="cab-search-field">
-            <label>FROM</label>
-
+            <label>PICKUP LOCATION</label>
             <div className="cab-field-value">
               <MapPin size={17} />
-
               <input
-                value={initialFrom}
+                value={from}
                 placeholder="Enter pickup location"
-                onChange={(e) =>
-                  setSearchParams({
-                    type,
-                    from: e.target.value,
-                    to: initialTo,
-                    date: initialDate,
-                    time: initialTime,
-                    travellers: initialTravellers,
-                  })
-                }
+                onChange={(event) => setFrom(event.target.value)}
               />
             </div>
           </div>
 
-          {/* To */}
           <div className="cab-search-field">
-            <label>TO</label>
-
+            <label>DESTINATION</label>
             <div className="cab-field-value">
               <MapPin size={17} />
-
               <input
-                value={initialTo}
-                placeholder="Enter destination"
-                onChange={(e) =>
-                  setSearchParams({
-                    type,
-                    from: initialFrom,
-                    to: e.target.value,
-                    date: initialDate,
-                    time: initialTime,
-                    travellers: initialTravellers,
-                  })
-                }
+                value={to}
+                placeholder={tripType === "Rental" ? "Optional" : "Enter destination"}
+                onChange={(event) => setTo(event.target.value)}
               />
             </div>
           </div>
 
-          {/* Add Stops */}
-          <button
-            type="button"
-            className="add-stops-btn"
-            onClick={() => alert("Add Stops feature")}
-          >
-            <Plus size={16} />
-            ADD STOPS
-          </button>
-
-          {/* Pickup Date */}
           <div className="cab-search-field">
-            <label>PICK-UP DATE</label>
-
+            <label>PICKUP DATE</label>
             <div className="cab-field-value">
               <CalendarDays size={17} />
-
               <input
                 type="date"
-                value={initialDate}
-                onChange={(e) =>
-                  setSearchParams({
-                    type,
-                    from: initialFrom,
-                    to: initialTo,
-                    date: e.target.value,
-                    time: initialTime,
-                    travellers: initialTravellers,
-                  })
-                }
+                value={date}
+                onChange={(event) => setDate(event.target.value)}
               />
             </div>
           </div>
 
-          {/* Pickup Time */}
           <div className="cab-search-field">
-            <label>PICK-UP TIME</label>
-
+            <label>PICKUP TIME</label>
             <div className="cab-field-value">
               <Clock size={17} />
-
               <input
                 type="time"
-                value={initialTime}
-                onChange={(e) =>
-                  setSearchParams({
-                    type,
-                    from: initialFrom,
-                    to: initialTo,
-                    date: initialDate,
-                    time: e.target.value,
-                    travellers: initialTravellers,
-                  })
-                }
+                value={time}
+                onChange={(event) => setTime(event.target.value)}
               />
             </div>
           </div>
 
-          {/* Travellers */}
           <div className="cab-search-field">
             <label>TRAVELLERS</label>
-
             <div className="cab-field-value">
               <Users size={17} />
-
               <select
-                value={initialTravellers}
-                onChange={(e) =>
-                  setSearchParams({
-                    type,
-                    from: initialFrom,
-                    to: initialTo,
-                    date: initialDate,
-                    time: initialTime,
-                    travellers: e.target.value,
-                  })
-                }
+                value={travellers}
+                onChange={(event) => setTravellers(event.target.value)}
               >
-                <option value="1">1 Traveller</option>
-                <option value="2">2 Travellers</option>
-                <option value="3">3 Travellers</option>
-                <option value="4">4 Travellers</option>
-                <option value="5">5 Travellers</option>
-                <option value="6">6 Travellers</option>
-                <option value="7">7 Travellers</option>
-                <option value="8">8 Travellers</option>
+                {Array.from({ length: 12 }, (_, index) => (
+                  <option key={index + 1} value={String(index + 1)}>
+                    {index + 1} Traveller{index === 0 ? "" : "s"}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
 
-          {/* Search */}
           <button
             type="button"
             className="cab-search-main-btn"
             onClick={handleSearch}
           >
             <Search size={18} />
-            SEARCH
+            SEARCH CABS
           </button>
-        </div>
+        </section>
 
-        {/* ================= RESULT HEADER ================= */}
-        <div className="cab-result-top">
-
+        {/* Results heading */}
+        <section className="cab-result-top">
           <div>
+            <span className="cab-eyebrow">MK TRAVELS · CAB BOOKING</span>
             <h1>
-              {initialFrom || "Pickup"}{" "}
-              {initialTo ? `to ${initialTo}` : ""} Cabs
+              {from || "Your pickup"}
+              {tripType === "Rental"
+                ? " Rental Cabs"
+                : ` to ${to || "your destination"}`}
             </h1>
-
             <p>
-              {type} • {initialDate || "Date not selected"} •{" "}
-              {initialTime || "10:00"}
+              {tripType} <span>•</span> {date || "Date not selected"}{" "}
+              <span>•</span> {time || "10:00"} <span>•</span>{" "}
+              {travellers} traveller{travellers === "1" ? "" : "s"}
             </p>
           </div>
 
-          <button
-            type="button"
-            className="modify-search-btn"
-            onClick={handleModifySearch}
-          >
-            Modify Search
-          </button>
-        </div>
+          
+        </section>
 
-        {/* ================= RESULTS ================= */}
+        {/* Cab results and filters */}
         <div className="cab-results-layout">
-
-          {/* FILTER */}
           <aside className="cab-filter-box">
-            <h3>Filters</h3>
+            <div className="cab-filter-heading">
+              <h3>Filters</h3>
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedTypes([]);
+                  setSelectedPrices([]);
+                  setMinimumRating(0);
+                }}
+              >
+                Reset
+              </button>
+            </div>
 
             <div className="filter-section">
               <h4>Cab Type</h4>
-
-              <label>
-                <input type="checkbox" />
-                Sedan
-              </label>
-
-              <label>
-                <input type="checkbox" />
-                SUV
-              </label>
-
-              <label>
-                <input type="checkbox" />
-                Premium
-              </label>
-
-              <label>
-                <input type="checkbox" />
-                Tempo Traveller
-              </label>
+              {["Sedan", "SUV", "Premium", "Tempo Traveller"].map((item) => (
+                <label key={item}>
+                  <input
+                    type="checkbox"
+                    checked={selectedTypes.includes(item)}
+                    onChange={() =>
+                      toggleFilter(item, setSelectedTypes, selectedTypes)
+                    }
+                  />
+                  {item}
+                </label>
+              ))}
             </div>
 
             <hr />
 
             <div className="filter-section">
-              <h4>Price</h4>
-
-              <label>
-                <input type="checkbox" />
-                Under ₹2,000
-              </label>
-
-              <label>
-                <input type="checkbox" />
-                ₹2,000 - ₹3,000
-              </label>
-
-              <label>
-                <input type="checkbox" />
-                Above ₹3,000
-              </label>
+              <h4>Price per trip</h4>
+              {[
+                ["under", "Under ₹2,000"],
+                ["middle", "₹2,000 – ₹3,000"],
+                ["above", "Above ₹3,000"],
+              ].map(([value, label]) => (
+                <label key={value}>
+                  <input
+                    type="checkbox"
+                    checked={selectedPrices.includes(value)}
+                    onChange={() =>
+                      toggleFilter(value, setSelectedPrices, selectedPrices)
+                    }
+                  />
+                  {label}
+                </label>
+              ))}
             </div>
 
             <hr />
 
             <div className="filter-section">
-              <h4>Rating</h4>
-
+              <h4>Minimum rating</h4>
+              {[4, 3].map((rating) => (
+                <label key={rating}>
+                  <input
+                    type="radio"
+                    name="cab-rating"
+                    checked={minimumRating === rating}
+                    onChange={() => setMinimumRating(rating)}
+                  />
+                  {rating}★ & above
+                </label>
+              ))}
               <label>
-                <input type="checkbox" />
-                4★ & above
-              </label>
-
-              <label>
-                <input type="checkbox" />
-                3★ & above
+                <input
+                  type="radio"
+                  name="cab-rating"
+                  checked={minimumRating === 0}
+                  onChange={() => setMinimumRating(0)}
+                />
+                All ratings
               </label>
             </div>
           </aside>
 
-          {/* CAB LIST */}
-          <main className="cab-list">
-
+          <section className="cab-list">
             <div className="cab-list-heading">
-              <strong>{cabList.length} Cabs Available</strong>
+              <div>
+                <strong>{filteredCabs.length} Cabs Available</strong>
+                <p>Choose a vehicle that suits your trip</p>
+              </div>
 
-              <button type="button">
-                Sort by: Recommended
+              <label className="cab-sort-control">
+                <span>Sort by</span>
+                <select
+                  value={sortBy}
+                  onChange={(event) => setSortBy(event.target.value)}
+                >
+                  <option value="recommended">Recommended</option>
+                  <option value="price-low">Price: Low to High</option>
+                  <option value="price-high">Price: High to Low</option>
+                  <option value="rating">Top Rated</option>
+                </select>
                 <ChevronDown size={15} />
-              </button>
+              </label>
             </div>
 
-            {cabList.map((cab) => (
-              <div className="cab-result-card" key={cab.id}>
+            {filteredCabs.length === 0 && (
+              <div className="cab-empty-state">
+                <Car size={38} />
+                <h3>No cabs match these filters</h3>
+                <p>Try changing your filters to see more options.</p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedTypes([]);
+                    setSelectedPrices([]);
+                    setMinimumRating(0);
+                  }}
+                >
+                  Clear filters
+                </button>
+              </div>
+            )}
 
-                <div className="cab-result-icon">
-                  <Car size={36} />
-                </div>
+            {filteredCabs.map((cab) => (
+              <article className="cab-result-card" key={cab.id}>
+                <button
+                  type="button"
+                  className="cab-result-photo-button"
+                  onClick={() => handleSelectCab(cab)}
+                  aria-label={`View booking for ${cab.name}`}
+                  title={`Book ${cab.name}`}
+                >
+                  <img
+                    className="cab-result-photo"
+                    src={cab.image}
+                    alt={`${cab.name} car`}
+                    loading="lazy"
+                    onError={(event) => {
+                      event.currentTarget.onerror = null;
+                      event.currentTarget.style.display = "none";
+                      event.currentTarget.parentElement.classList.add(
+                        "cab-photo-fallback"
+                      );
+                    }}
+                  />
+                  <span className="cab-photo-click-label">View cab</span>
+                </button>
 
                 <div className="cab-result-info">
-
                   <div className="cab-name-row">
-                    <h2>{cab.name}</h2>
-
+                    <button
+                      type="button"
+                      className="cab-name-link"
+                      onClick={() => handleSelectCab(cab)}
+                    >
+                      {cab.name}
+                    </button>
                     <span className="cab-rating">
                       <Star size={12} fill="currentColor" />
-                      {cab.rating}
+                      {cab.rating.toFixed(1)}
                     </span>
                   </div>
 
-                  <p className="cab-vehicle">
-                    {cab.vehicle}
-                  </p>
+                  <p className="cab-vehicle">{cab.vehicle}</p>
 
                   <div className="cab-route">
                     <MapPin size={14} />
+                    <span>{from || "Pickup location"}</span>
+                    {tripType !== "Rental" && (
+                      <>
+                        <ArrowRight size={14} />
+                        <span>{to || "Destination"}</span>
+                      </>
+                    )}
+                  </div>
 
-                    <span>
-                      {initialFrom || "Pickup"}
-                    </span>
-
-                    <ArrowRight size={14} />
-
-                    <span>
-                      {initialTo || "Destination"}
-                    </span>
+                  <div className="cab-capacity">
+                    <span><Users size={14} /> {cab.seats} seats</span>
+                    <span><Snowflake size={14} /> AC</span>
+                    <span><Luggage size={14} /> Luggage</span>
                   </div>
 
                   <div className="cab-features">
                     {cab.features.map((feature) => (
-                      <span key={feature}>
-                        {feature}
-                      </span>
+                      <span key={feature}>{feature}</span>
                     ))}
                   </div>
                 </div>
 
                 <div className="cab-price-box">
-
                   <span>Starting from</span>
-
-                  <strong>
-                    ₹{cab.price.toLocaleString("en-IN")}
-                  </strong>
-
+                  <strong>₹{cab.price.toLocaleString("en-IN")}</strong>
                   <small>per trip</small>
-
                   <button
                     type="button"
-                    onClick={() =>
-                      alert(`${cab.name} selected`)
-                    }
+                    onClick={() => handleSelectCab(cab)}
                   >
-                    SELECT CAB
+                    SELECT CAB <ArrowRight size={15} />
                   </button>
                 </div>
-
-              </div>
+              </article>
             ))}
-
-          </main>
+          </section>
         </div>
       </div>
-    </div>
+    </main>
   );
 }
 
