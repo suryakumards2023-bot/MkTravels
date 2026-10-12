@@ -10,8 +10,7 @@ import {
   UserRound,
 } from "lucide-react";
 
-import { loginUser } from "../utils/authStorage";
-
+import { apiRequest } from "../api/api";
 import "./Auth.css";
 
 const Login = () => {
@@ -23,64 +22,73 @@ const Login = () => {
     password: "",
   });
 
-  const [showPassword, setShowPassword] =
-    useState(false);
-
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
+    setFormData((previous) => ({
+      ...previous,
       [e.target.name]: e.target.value,
-    });
+    }));
 
     setError("");
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
 
-    if (
-      !formData.email ||
-      !formData.password
-    ) {
+    const email = formData.email.trim();
+    const password = formData.password;
+
+    if (!email || !password) {
+      setError("Please enter email and password.");
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+
+      // Login API: call only once.
+      await apiRequest("/auth/login", {
+        method: "POST",
+        body: JSON.stringify({
+          email,
+          password,
+        }),
+      });
+
+      // Open the originally requested page when available.
+      // Otherwise, open the Profile page.
+      const requestedPath = location.state?.from;
+
+      const safePath =
+        typeof requestedPath === "string" &&
+        requestedPath.startsWith("/") &&
+        !requestedPath.startsWith("//")
+          ? requestedPath
+          : "/profile";
+
+      navigate(safePath, { replace: true });
+    } catch (err) {
       setError(
-        "Please enter email and password."
+        err.message || "Unable to sign in. Please try again."
       );
-      return;
+    } finally {
+      setIsLoading(false);
     }
-
-    const result = loginUser(formData);
-
-    if (!result.success) {
-      setError(result.message);
-      return;
-    }
-
-    const redirectTo =
-      location.state?.from || "/my-trips";
-
-    navigate(redirectTo, {
-      replace: true,
-    });
   };
 
   return (
     <div className="auth-page">
       <div className="auth-container">
-
-        {/* LEFT */}
+        {/* LEFT PANEL */}
         <div className="auth-brand-panel">
-
           <div className="auth-brand-content">
+            <div className="auth-logo">MK</div>
 
-            <div className="auth-logo">
-              MK
-            </div>
-
-            <span className="auth-label">
-              MK TRAVELS
-            </span>
+            <span className="auth-label">MK TRAVELS</span>
 
             <h1>
               Your journey
@@ -95,107 +103,72 @@ const Login = () => {
             </p>
 
             <div className="auth-benefits">
-
               <div>
                 <ShieldCheck size={19} />
-
-                <span>
-                  Secure booking management
-                </span>
+                <span>Secure booking management</span>
               </div>
 
               <div>
                 <UserRound size={19} />
-
-                <span>
-                  Personalized travel profile
-                </span>
+                <span>Personalized travel profile</span>
               </div>
 
               <div>
                 <ArrowRight size={19} />
-
-                <span>
-                  Easy access to your trips
-                </span>
+                <span>Easy access to your trips</span>
               </div>
-
             </div>
-
           </div>
-
         </div>
 
-        {/* RIGHT */}
+        {/* RIGHT PANEL */}
         <div className="auth-form-panel">
-
           <div className="auth-form-wrapper">
-
             <div className="auth-mobile-logo">
-              <div className="auth-logo">
-                MK
-              </div>
-
-              <strong>
-                MK TRAVELS
-              </strong>
+              <div className="auth-logo">MK</div>
+              <strong>MK TRAVELS</strong>
             </div>
 
             <div className="auth-heading">
-
-              <span>
-                WELCOME BACK
-              </span>
-
-              <h2>
-                Sign in to your account
-              </h2>
-
+              <span>WELCOME BACK</span>
+              <h2>Sign in to your account</h2>
               <p>
-                Access your bookings and
-                manage your trips.
+                Access your bookings and manage your trips.
               </p>
-
             </div>
 
             {error && (
-              <div className="auth-error">
+              <div className="auth-error" role="alert">
                 {error}
               </div>
             )}
 
-            <form
-              onSubmit={handleSubmit}
-              className="auth-form"
-            >
-
+            <form onSubmit={handleSubmit} className="auth-form">
               <div className="auth-field">
-
-                <label>
+                <label htmlFor="login-email">
                   Email Address
                 </label>
 
                 <div className="auth-input">
-
                   <Mail size={18} />
 
                   <input
+                    id="login-email"
                     type="email"
                     name="email"
                     placeholder="Enter your email"
                     value={formData.email}
                     onChange={handleChange}
+                    autoComplete="email"
+                    maxLength={254}
+                    required
                   />
-
                 </div>
-
               </div>
 
               <div className="auth-field">
-
                 <div className="auth-label-row">
-
-                  <label>
+                  <label htmlFor="login-password">
                     Password
                   </label>
 
@@ -203,39 +176,40 @@ const Login = () => {
                     type="button"
                     className="forgot-btn"
                     onClick={() =>
-                      alert(
-                        "Password reset will be available after backend integration."
+                      setError(
+                        "Password reset has not been implemented yet."
                       )
                     }
                   >
                     Forgot password?
                   </button>
-
                 </div>
 
                 <div className="auth-input">
-
                   <Lock size={18} />
 
                   <input
-                    type={
-                      showPassword
-                        ? "text"
-                        : "password"
-                    }
+                    id="login-password"
+                    type={showPassword ? "text" : "password"}
                     name="password"
                     placeholder="Enter your password"
                     value={formData.password}
                     onChange={handleChange}
+                    autoComplete="current-password"
+                    maxLength={128}
+                    required
                   />
 
                   <button
                     type="button"
                     className="password-toggle"
+                    aria-label={
+                      showPassword
+                        ? "Hide password"
+                        : "Show password"
+                    }
                     onClick={() =>
-                      setShowPassword(
-                        !showPassword
-                      )
+                      setShowPassword((previous) => !previous)
                     }
                   >
                     {showPassword ? (
@@ -244,45 +218,32 @@ const Login = () => {
                       <Eye size={18} />
                     )}
                   </button>
-
                 </div>
-
               </div>
 
               <button
                 type="submit"
                 className="auth-submit"
+                disabled={isLoading}
               >
-                Sign In
-                <ArrowRight size={18} />
+                {isLoading ? "Signing In..." : "Sign In"}
+                {!isLoading && <ArrowRight size={18} />}
               </button>
-
             </form>
 
             <div className="auth-divider">
-              <span>
-                Don't have an account?
-              </span>
+              <span>Don't have an account?</span>
             </div>
 
-            <Link
-              to="/signup"
-              className="auth-secondary-btn"
-            >
+            <Link to="/signup" className="auth-secondary-btn">
               Create New Account
             </Link>
 
-            <Link
-              to="/"
-              className="auth-home-link"
-            >
+            <Link to="/" className="auth-home-link">
               ← Back to Home
             </Link>
-
           </div>
-
         </div>
-
       </div>
     </div>
   );

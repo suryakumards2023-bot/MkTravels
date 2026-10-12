@@ -1,15 +1,14 @@
+
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import {
-  ArrowLeft,
   ArrowRight,
   CalendarDays,
   Camera,
   Edit3,
   LogOut,
   Mail,
-  MapPin,
   Phone,
   Save,
   Ticket,
@@ -17,123 +16,240 @@ import {
   X,
 } from "lucide-react";
 
-import {
-  getCurrentUser,
-  logoutUser,
-  updateCurrentUser,
-} from "../utils/authStorage";
-
+import { apiRequest } from "../api/api";
 import "./Profile.css";
+
+const EMPTY_FORM = {
+  name: "",
+  email: "",
+  phone: "",
+  address: "",
+  state: "",
+  city: "",
+  pincode: "",
+  townVillage: "",
+};
 
 const Profile = () => {
   const navigate = useNavigate();
 
   const [user, setUser] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    address: "",
-    state: "",
-    city: "",
-    pincode: "",
-    townVillage: "",
-  });
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [photo, setPhoto] = useState("");
+  const [formData, setFormData] = useState(EMPTY_FORM);
 
+  // Success message automatically disappears after 3 seconds.
   useEffect(() => {
-    const currentUser = getCurrentUser();
+    if (!success) return;
 
-    if (!currentUser) {
-      navigate("/login", {
-        state: {
-          from: "/profile",
-        },
-      });
-      return;
-    }
+    const timer = window.setTimeout(() => {
+      setSuccess("");
+    }, 3000);
 
-    setUser(currentUser);
+    return () => window.clearTimeout(timer);
+  }, [success]);
 
-    setFormData({
-      name: currentUser.name || "",
-      email: currentUser.email || "",
-      phone: currentUser.phone || "",
-      address: currentUser.address || "",
-      state: currentUser.state || "",
-      city: currentUser.city || "",
-      pincode: currentUser.pincode || "",
-      townVillage: currentUser.townVillage || "",
-    });
+  // Load profile from backend.
+  useEffect(() => {
+    let active = true;
+
+    const loadProfile = async () => {
+      try {
+        setIsLoading(true);
+        setError("");
+
+        const response = await apiRequest("/auth/me");
+        const currentUser = response?.user || response;
+
+        if (
+          !currentUser?._id &&
+          !currentUser?.id &&
+          !currentUser?.email
+        ) {
+          throw new Error("Unable to load your account details.");
+        }
+
+        if (!active) return;
+
+        setUser(currentUser);
+        setPhoto(currentUser.profilePhoto || "");
+
+        setFormData({
+          ...EMPTY_FORM,
+          name: currentUser.name || "",
+          email: currentUser.email || "",
+          phone: currentUser.phone || "",
+          address: currentUser.address || "",
+          state: currentUser.state || "",
+          city: currentUser.city || "",
+          pincode: currentUser.pincode || "",
+          townVillage: currentUser.townVillage || "",
+        });
+      } catch (err) {
+        if (!active) return;
+
+        if (err.status === 401) {
+          navigate("/login", {
+            replace: true,
+            state: { from: "/profile" },
+          });
+          return;
+        }
+
+        setError(err.message || "Unable to load your profile.");
+      } finally {
+        if (active) setIsLoading(false);
+      }
+    };
+
+    loadProfile();
+
+    return () => {
+      active = false;
+    };
   }, [navigate]);
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+    const { name, value } = e.target;
+
+    setFormData((previous) => ({
+      ...previous,
+      [name]: value,
+    }));
   };
 
-  // Profile Photo
+  // Photo can only be selected in Edit Profile mode.
   const handlePhotoChange = (e) => {
     const file = e.target.files?.[0];
 
     if (!file) return;
 
-    if (!file.type.startsWith("image/")) {
-      alert("Please select an image file.");
+    if (!isEditing) {
+      e.target.value = "";
+      return;
+    }
+
+    if (!["image/jpeg", "image/png", "image/webp", "image/gif"].includes(file.type)) {
+      setError("Please select a JPG, PNG, WEBP or GIF image.");
+      e.target.value = "";
       return;
     }
 
     if (file.size > 2 * 1024 * 1024) {
-      alert("Photo size should be less than 2MB.");
+      setError("Photo size should be less than 2MB.");
+      e.target.value = "";
       return;
     }
 
+    setError("");
+    setSuccess("");
+
     const reader = new FileReader();
 
-    reader.onloadend = () => {
-      const updatedUser = updateCurrentUser({
-        photo: reader.result,
-      });
+    reader.onload = () => {
+      if (typeof reader.result === "string") {
+        setPhoto(reader.result);
+      }
+    };
 
-      setUser(updatedUser);
+    reader.onerror = () => {
+      setError("Unable to read the selected photo. Please try again.");
     };
 
     reader.readAsDataURL(file);
   };
 
-  // Save Profile
-  const handleSave = () => {
-    if (!formData.name.trim()) {
-      alert("Please enter your name.");
+  const handleSave = async () => {
+    if (isSaving) return;
+
+    const name = formData.name.trim();
+    const email = formData.email.trim();
+    const phone = formData.phone.trim();
+    const pincode = formData.pincode.trim();
+
+    if (name.length < 2) {
+      setError("Name must contain at least 2 characters.");
       return;
     }
 
-    if (!formData.email.trim()) {
-      alert("Please enter your email.");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setError("Please enter a valid email address.");
       return;
     }
 
-    const updatedUser = updateCurrentUser({
-      name: formData.name,
-      email: formData.email,
-      phone: formData.phone,
-      address: formData.address,
-      state: formData.state,
-      city: formData.city,
-      pincode: formData.pincode,
-      townVillage: formData.townVillage,
-    });
+    if (phone && !/^\+?[0-9\s()-]{7,20}$/.test(phone)) {
+      setError("Please enter a valid phone number.");
+      return;
+    }
 
-    setUser(updatedUser);
-    setIsEditing(false);
+    if (pincode && !/^[0-9]{6}$/.test(pincode)) {
+      setError("Pincode must contain exactly 6 digits.");
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+      setError("");
+      setSuccess("");
+
+      const response = await apiRequest("/auth/profile", {
+        method: "PUT",
+        body: JSON.stringify({
+          name,
+          email,
+          phone,
+          address: formData.address.trim(),
+          state: formData.state.trim(),
+          city: formData.city.trim(),
+          pincode,
+          townVillage: formData.townVillage.trim(),
+          profilePhoto: photo,
+        }),
+      });
+
+      const updatedUser = response?.user;
+
+      if (!updatedUser) {
+        throw new Error("Invalid profile update response.");
+      }
+
+      setUser((previous) => ({
+        ...previous,
+        ...updatedUser,
+      }));
+
+      setFormData({
+        ...EMPTY_FORM,
+        name: updatedUser.name ?? name,
+        email: updatedUser.email ?? email,
+        phone: updatedUser.phone ?? phone,
+        address: updatedUser.address ?? formData.address.trim(),
+        state: updatedUser.state ?? formData.state.trim(),
+        city: updatedUser.city ?? formData.city.trim(),
+        pincode: updatedUser.pincode ?? pincode,
+        townVillage:
+          updatedUser.townVillage ?? formData.townVillage.trim(),
+      });
+
+      setPhoto(updatedUser.profilePhoto ?? photo);
+      setIsEditing(false);
+      setSuccess("Profile updated successfully.");
+    } catch (err) {
+      setError(err.message || "Unable to update profile.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  // Cancel Editing
   const handleCancel = () => {
     setFormData({
+      ...EMPTY_FORM,
       name: user?.name || "",
       email: user?.email || "",
       phone: user?.phone || "",
@@ -144,21 +260,53 @@ const Profile = () => {
       townVillage: user?.townVillage || "",
     });
 
+    setPhoto(user?.profilePhoto || "");
+    setError("");
+    setSuccess("");
     setIsEditing(false);
   };
 
-  // Logout
-  const handleLogout = () => {
-    logoutUser();
-    navigate("/login");
+  const handleLogout = async () => {
+    try {
+      setIsLoggingOut(true);
+      setError("");
+
+      await apiRequest("/auth/logout", {
+        method: "POST",
+      });
+
+      navigate("/login", { replace: true });
+    } catch (err) {
+      setError(err.message || "Logout request failed. Please try again.");
+      setIsLoggingOut(false);
+    }
   };
 
-  if (!user) {
-    return null;
+  if (isLoading) {
+    return (
+      <div className="profile-page">
+        <div className="profile-container">
+          <p>Loading your profile...</p>
+        </div>
+      </div>
+    );
   }
 
-  const firstLetter =
-    user.name?.charAt(0)?.toUpperCase() || "U";
+  if (!user) {
+    return (
+      <div className="profile-page">
+        <div className="profile-container">
+          <p role="alert">{error || "Unable to load your profile."}</p>
+
+          <button type="button" onClick={() => navigate("/login")}>
+            Go to Login
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const firstLetter = user.name?.charAt(0)?.toUpperCase() || "U";
 
   const memberSince = user.createdAt
     ? new Date(user.createdAt).toLocaleDateString("en-IN", {
@@ -170,38 +318,49 @@ const Profile = () => {
   return (
     <div className="profile-page">
       <div className="profile-container">
+        {success && (
+          <div className="profile-success-message" role="status">
+            {success}
+          </div>
+        )}
 
-        {/* Main Profile Grid */}
+        {error && (
+          <div className="auth-error" role="alert">
+            {error}
+          </div>
+        )}
+
         <div className="profile-grid">
-
-          {/* Left Profile Card */}
+          {/* Main Profile Card */}
           <div className="profile-main-card">
-
             <div className="profile-card-title">
-               <h1>My Profile</h1>
-                </div>
+              <h1>My Profile</h1>
+            </div>
+
             <div className="profile-cover"></div>
 
-            {/* Profile Photo */}
             <div className="profile-avatar-wrapper">
-
-              {user.photo ? (
+              {photo ? (
                 <img
-                  src={user.photo}
-                  alt={user.name}
+                  src={photo}
+                  alt={user.name || "Profile"}
                   className="profile-avatar-image"
                 />
               ) : (
-                <div className="profile-avatar">
-                  {firstLetter}
-                </div>
+                <div className="profile-avatar">{firstLetter}</div>
               )}
 
-              {/* Camera Button */}
               <label
                 htmlFor="profile-photo"
-                className="profile-photo-btn"
-                title="Change Profile Photo"
+                className={`profile-photo-btn ${
+                  !isEditing ? "profile-photo-disabled" : ""
+                }`}
+                title={
+                  isEditing
+                    ? "Change Profile Photo"
+                    : "Click Edit Profile to change photo"
+                }
+                aria-disabled={!isEditing}
               >
                 <Camera size={15} />
               </label>
@@ -209,16 +368,15 @@ const Profile = () => {
               <input
                 id="profile-photo"
                 type="file"
-                accept="image/*"
+                accept="image/jpeg,image/png,image/webp,image/gif"
                 onChange={handlePhotoChange}
+                disabled={!isEditing || isSaving}
                 hidden
               />
             </div>
 
-            {/* Basic Info */}
             <div className="profile-basic-info">
-
-              <h2>{user.name}</h2>
+              <h2>{user.name || "User"}</h2>
 
               <p>
                 <Mail size={15} />
@@ -236,16 +394,18 @@ const Profile = () => {
                 <CalendarDays size={14} />
                 Member since {memberSince}
               </span>
-
             </div>
 
-            {/* Buttons */}
             <div className="profile-actions">
-
               {!isEditing ? (
                 <button
+                  type="button"
                   className="profile-edit-btn"
-                  onClick={() => setIsEditing(true)}
+                  onClick={() => {
+                    setError("");
+                    setSuccess("");
+                    setIsEditing(true);
+                  }}
                 >
                   <Edit3 size={16} />
                   Edit Profile
@@ -253,48 +413,42 @@ const Profile = () => {
               ) : (
                 <>
                   <button
+                    type="button"
                     className="profile-save-btn"
                     onClick={handleSave}
+                    disabled={isSaving}
                   >
                     <Save size={16} />
-                    Save Changes
+                    {isSaving ? "Saving..." : "Save Changes"}
                   </button>
 
                   <button
+                    type="button"
                     className="profile-cancel-btn"
                     onClick={handleCancel}
+                    disabled={isSaving}
                   >
                     <X size={16} />
                     Cancel
                   </button>
                 </>
               )}
-
             </div>
           </div>
 
-          {/* Right Details Card */}
+          {/* Personal Information */}
           <div className="profile-details-card">
-
             <div className="profile-card-heading">
-
               <div>
                 <h2>Personal Information</h2>
-
-                <p>
-                  Manage your personal and contact details.
-                </p>
+                <p>Manage your personal and contact details.</p>
               </div>
 
               <User size={21} />
-
             </div>
 
             <div className="profile-form">
-
-              {/* Full Name */}
               <div className="profile-field">
-
                 <label>Full Name</label>
 
                 {isEditing ? (
@@ -310,12 +464,9 @@ const Profile = () => {
                     {user.name || "Not provided"}
                   </div>
                 )}
-
               </div>
 
-              {/* Email */}
               <div className="profile-field">
-
                 <label>Email Address</label>
 
                 {isEditing ? (
@@ -331,12 +482,9 @@ const Profile = () => {
                     {user.email || "Not provided"}
                   </div>
                 )}
-
               </div>
 
-              {/* Phone */}
               <div className="profile-field">
-
                 <label>Phone Number</label>
 
                 {isEditing ? (
@@ -352,12 +500,9 @@ const Profile = () => {
                     {user.phone || "Not provided"}
                   </div>
                 )}
-
               </div>
 
-              {/* Address */}
               <div className="profile-field profile-full">
-
                 <label>Address</label>
 
                 {isEditing ? (
@@ -373,12 +518,9 @@ const Profile = () => {
                     {user.address || "Not provided"}
                   </div>
                 )}
-
               </div>
 
-              {/* State */}
               <div className="profile-field">
-
                 <label>State</label>
 
                 {isEditing ? (
@@ -394,12 +536,9 @@ const Profile = () => {
                     {user.state || "Not provided"}
                   </div>
                 )}
-
               </div>
 
-              {/* City */}
               <div className="profile-field">
-
                 <label>City</label>
 
                 {isEditing ? (
@@ -415,12 +554,9 @@ const Profile = () => {
                     {user.city || "Not provided"}
                   </div>
                 )}
-
               </div>
 
-              {/* Pincode */}
               <div className="profile-field">
-
                 <label>Pincode</label>
 
                 {isEditing ? (
@@ -429,7 +565,8 @@ const Profile = () => {
                     name="pincode"
                     value={formData.pincode}
                     onChange={handleChange}
-                    maxLength="6"
+                    maxLength={6}
+                    inputMode="numeric"
                     placeholder="6 digit pincode"
                   />
                 ) : (
@@ -437,12 +574,9 @@ const Profile = () => {
                     {user.pincode || "Not provided"}
                   </div>
                 )}
-
               </div>
 
-              {/* Town / Village */}
               <div className="profile-field">
-
                 <label>Town / Village</label>
 
                 {isEditing ? (
@@ -458,28 +592,20 @@ const Profile = () => {
                     {user.townVillage || "Not provided"}
                   </div>
                 )}
-
               </div>
-
             </div>
           </div>
         </div>
 
         {/* My Bookings */}
-        <Link
-          to="/my-trips"
-          className="profile-bookings-card"
-        >
+        <Link to="/my-trips" className="profile-bookings-card">
           <div className="profile-bookings-icon">
             <Ticket size={23} />
           </div>
 
           <div className="profile-bookings-content">
             <h2>My Bookings</h2>
-
-            <p>
-              View and manage all your tour bookings.
-            </p>
+            <p>View and manage all your tour bookings.</p>
           </div>
 
           <div className="profile-bookings-right">
@@ -490,25 +616,21 @@ const Profile = () => {
 
         {/* Account */}
         <div className="profile-account-card">
-
           <div>
             <h2>Account</h2>
-
-            <p>
-              Manage your MK TRAVELS account.
-            </p>
+            <p>Manage your MK TRAVELS account.</p>
           </div>
 
           <button
+            type="button"
             className="profile-logout-btn"
             onClick={handleLogout}
+            disabled={isLoggingOut}
           >
             <LogOut size={17} />
-            Logout
+            {isLoggingOut ? "Logging out..." : "Logout"}
           </button>
-
         </div>
-
       </div>
     </div>
   );

@@ -1,39 +1,32 @@
-
 import "./Payment.css";
 
 import { useState } from "react";
-import {
-  Link,
-  useLocation,
-  useNavigate,
-  useParams,
-} from "react-router-dom";
-
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
-  Check,
-  CreditCard,
-  Lock,
-  Mail,
-  MapPin,
-  Phone,
-  ShieldCheck,
-  Smartphone,
-  Wallet,
-  Building2,
-  TicketPercent,
-  CalendarDays,
-  Users,
-  User,
-  Star,
-  CarFront,
+  CheckCircle2,
   Clock,
+  CalendarDays,
+  CarFront,
   Bus,
   Hotel,
   Shield,
+  ShieldCheck,
+  MapPin,
+  Users,
+  User,
+  Mail,
+  Phone,
+  TicketPercent,
+  QrCode,
+  Copy,
+  LoaderCircle,
 } from "lucide-react";
 
 import tours from "../data/tours";
+
+const API_BASE =
+  import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 const Payment = () => {
   const { id } = useParams();
@@ -43,23 +36,16 @@ const Payment = () => {
   const params = new URLSearchParams(location.search);
   const type = (params.get("type") || "tour").toLowerCase();
 
-  // -----------------------------------------
-  // BOOKING TYPE
-  // -----------------------------------------
-
   const isCabBooking = type === "cab";
   const isBusBooking = type === "bus";
   const isHotelBooking = type === "hotel";
   const isInsuranceBooking = type === "insurance";
-  const isTourBooking =
-    !isCabBooking &&
-    !isBusBooking &&
-    !isHotelBooking &&
-    !isInsuranceBooking;
-
-  // -----------------------------------------
-  // COMMON BOOKING DETAILS
-  // -----------------------------------------
+  const isTourBooking = ![
+    "cab",
+    "bus",
+    "hotel",
+    "insurance",
+  ].includes(type);
 
   const item = {
     id:
@@ -69,65 +55,46 @@ const Payment = () => {
       params.get("insuranceId") ||
       id ||
       "",
-
     name:
       params.get("name") ||
       params.get("hotelName") ||
       params.get("planName") ||
       "",
-
     price: Number(params.get("price") || 0),
-
     from: params.get("from") || "",
     to: params.get("to") || "",
-
     date:
       params.get("date") ||
       params.get("travelDate") ||
       params.get("checkIn") ||
       "",
-
     time: params.get("time") || "",
     departure: params.get("departure") || "",
-    arrival: params.get("arrival") || "",
-    duration: params.get("duration") || "",
-
     vehicle: params.get("vehicle") || "Cab",
     subtitle: params.get("subtitle") || "",
     seatType: params.get("seatType") || "Seater",
     ac: params.get("ac") === "true",
-
     seats: Number(params.get("seats") || 1),
     travellers: Number(
       params.get("travellers") ||
-      params.get("guests") ||
-      params.get("members") ||
-      params.get("seats") ||
-      1
+        params.get("guests") ||
+        params.get("members") ||
+        params.get("seats") ||
+        1
     ),
-
     checkIn: params.get("checkIn") || "",
     checkOut: params.get("checkOut") || "",
     rooms: Number(params.get("rooms") || 1),
     guests: Number(params.get("guests") || 1),
-
     plan: params.get("plan") || params.get("planName") || "",
     coverage: params.get("coverage") || "",
     durationLabel: params.get("durationLabel") || "",
   };
 
-  // -----------------------------------------
-  // TOUR DETAILS
-  // -----------------------------------------
-
   const tour = isTourBooking
     ? location.state?.tour ||
-      tours.find((tourItem) => String(tourItem.id) === String(id))
+      tours.find((entry) => String(entry.id) === String(id))
     : null;
-
-  // -----------------------------------------
-  // CUSTOMER DETAILS
-  // -----------------------------------------
 
   const booking = {
     fullName:
@@ -148,17 +115,13 @@ const Payment = () => {
       "",
     adults: Number(
       params.get("travellers") ||
-      params.get("seats") ||
-      params.get("guests") ||
-      location.state?.booking?.adults ||
-      1
+        params.get("seats") ||
+        params.get("guests") ||
+        location.state?.booking?.adults ||
+        1
     ),
-    children: Number(
-      location.state?.booking?.children || 0
-    ),
-    infants: Number(
-      location.state?.booking?.infants || 0
-    ),
+    children: Number(location.state?.booking?.children || 0),
+    infants: Number(location.state?.booking?.infants || 0),
   };
 
   const initialTotal = Number(
@@ -187,34 +150,13 @@ const Payment = () => {
     ? item.plan || item.subtitle || "Insurance Plan"
     : tour?.destination || "";
 
-  const dateLabel = isHotelBooking ? "Check-in Date" : "Travel Date";
-
-  // -----------------------------------------
-  // PAYMENT STATE
-  // -----------------------------------------
-
-  const [paymentMethod, setPaymentMethod] = useState("card");
-
-  const [cardData, setCardData] = useState({
-    cardNumber: "",
-    expiry: "",
-    cvv: "",
-    name: "",
-  });
-
-  const [upiId, setUpiId] = useState("");
-  const [selectedBank, setSelectedBank] = useState("");
-  const [selectedWallet, setSelectedWallet] = useState("");
-
   const [coupon, setCoupon] = useState("");
   const [couponApplied, setCouponApplied] = useState(false);
   const [couponError, setCouponError] = useState("");
   const [paymentError, setPaymentError] = useState("");
-  const [isPaid, setIsPaid] = useState(false);
-
-  // -----------------------------------------
-  // PRICE AND COUPON
-  // -----------------------------------------
+  const [utr, setUtr] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [paymentRequest, setPaymentRequest] = useState(null);
 
   const discount = couponApplied
     ? Math.round(initialTotal * 0.1)
@@ -226,7 +168,7 @@ const Payment = () => {
     setCouponError("");
 
     if (!coupon.trim()) {
-      setCouponError("Enter a coupon code.");
+      setCouponError("Coupon code enter karein.");
       return;
     }
 
@@ -238,121 +180,12 @@ const Payment = () => {
     }
   };
 
-  // -----------------------------------------
-  // CARD INPUT FORMATTING
-  // -----------------------------------------
+  const formatDate = (value) => {
+    if (!value) return "Not selected";
 
-  const handleCardChange = (event) => {
-    const { name, value } = event.target;
-    let formattedValue = value;
+    const date = new Date(`${value}T00:00:00`);
 
-    if (name === "cardNumber") {
-      formattedValue = value
-        .replace(/\D/g, "")
-        .slice(0, 16)
-        .replace(/(.{4})/g, "$1 ")
-        .trim();
-    }
-
-    if (name === "expiry") {
-      formattedValue = value.replace(/\D/g, "").slice(0, 4);
-
-      if (formattedValue.length > 2) {
-        formattedValue =
-          formattedValue.slice(0, 2) +
-          "/" +
-          formattedValue.slice(2);
-      }
-    }
-
-    if (name === "cvv") {
-      formattedValue = value.replace(/\D/g, "").slice(0, 3);
-    }
-
-    setCardData((previous) => ({
-      ...previous,
-      [name]: formattedValue,
-    }));
-
-    setPaymentError("");
-  };
-
-  // -----------------------------------------
-  // PAYMENT VALIDATION
-  // -----------------------------------------
-
-  const validatePayment = () => {
-    if (initialTotal <= 0) {
-      return "Booking price is missing. Please select your booking again.";
-    }
-
-    if (paymentMethod === "card") {
-      const cardNumber = cardData.cardNumber.replace(/\s/g, "");
-
-      if (!/^\d{16}$/.test(cardNumber)) {
-        return "Please enter a valid 16-digit card number.";
-      }
-
-      if (!/^(0[1-9]|1[0-2])\/\d{2}$/.test(cardData.expiry)) {
-        return "Please enter expiry in MM/YY format.";
-      }
-
-      if (!/^\d{3}$/.test(cardData.cvv)) {
-        return "Please enter a valid 3-digit CVV.";
-      }
-
-      if (!cardData.name.trim()) {
-        return "Please enter the name on your card.";
-      }
-    }
-
-    if (paymentMethod === "upi") {
-      if (!upiId.trim()) {
-        return "Please enter your UPI ID.";
-      }
-
-      if (!/^[\w.-]+@[\w.-]+$/.test(upiId.trim())) {
-        return "Please enter a valid UPI ID.";
-      }
-    }
-
-    if (paymentMethod === "netbanking" && !selectedBank) {
-      return "Please select a bank.";
-    }
-
-    if (paymentMethod === "wallet" && !selectedWallet) {
-      return "Please select a wallet.";
-    }
-
-    return "";
-  };
-
-  const handlePayment = () => {
-    const error = validatePayment();
-
-    if (error) {
-      setPaymentError(error);
-      return;
-    }
-
-    setPaymentError("");
-
-    // Demo only: no real payment is processed.
-    setIsPaid(true);
-  };
-
-  // -----------------------------------------
-  // HELPERS
-  // -----------------------------------------
-
-  const formatDate = (dateValue) => {
-    if (!dateValue) return "Not selected";
-
-    const date = new Date(`${dateValue}T00:00:00`);
-
-    if (Number.isNaN(date.getTime())) {
-      return dateValue;
-    }
+    if (Number.isNaN(date.getTime())) return value;
 
     return date.toLocaleDateString("en-IN", {
       day: "2-digit",
@@ -366,15 +199,7 @@ const Payment = () => {
     (Number(booking.children) || 0) +
     (Number(booking.infants) || 0);
 
-  const goBack = () => {
-    if (isTourBooking) {
-      navigate(`/booking/${tour.id}`);
-      return;
-    }
-
-    // Return to the previous booking form with its current details.
-    navigate(-1);
-  };
+  const dateLabel = isHotelBooking ? "Check-in Date" : "Travel Date";
 
   const explorePath = isCabBooking
     ? "/cabs"
@@ -396,50 +221,130 @@ const Payment = () => {
     ? "Explore Insurance"
     : "Explore More Tours";
 
-    
-  // -----------------------------------------
-  // EXPLORE MORE / SEARCH MORE BUSES
-  // -----------------------------------------
-
   const handleExploreMore = () => {
     if (isBusBooking) {
-      const searchParams = new URLSearchParams();
+      const search = new URLSearchParams({
+        type: "bus",
+        from: item.from,
+        to: item.to,
+        date: item.date,
+      });
 
-      searchParams.set("type", "bus");
-      searchParams.set("from", item.from || "");
-      searchParams.set("to", item.to || "");
-      searchParams.set("date", item.date || "");
-
-      navigate(`/bus-result?${searchParams.toString()}`);
+      navigate(`/bus-result?${search.toString()}`);
       return;
     }
 
     navigate(explorePath);
   };
 
+  const isBookingMissing = isTourBooking
+    ? !tour || initialTotal <= 0
+    : !item.id || initialTotal <= 0;
 
-  const isBookingMissing =
-    isTourBooking
-      ? !tour
-      : !item.id || initialTotal <= 0;
+  // Payment request stays pending until the owner verifies the transaction.
+  const handlePaymentRequest = async (event) => {
+    event.preventDefault();
+    setPaymentError("");
 
-  // -----------------------------------------
-  // BOOKING NOT FOUND
-  // -----------------------------------------
+    if (initialTotal <= 0 || !Number.isFinite(finalAmount)) {
+      setPaymentError("Booking amount valid nahi hai. Dobara booking select karein.");
+      return;
+    }
+
+    const cleanUtr = utr.trim();
+
+    if (!/^[A-Za-z0-9-]{8,30}$/.test(cleanUtr)) {
+      setPaymentError("Valid UTR / transaction reference number enter karein.");
+      return;
+    }
+
+    if (!booking.fullName || !booking.mobile || !booking.email) {
+      setPaymentError(
+        "Customer name, mobile aur email missing hain. Booking form par wapas jaakar details complete karein."
+      );
+      return;
+    }
+
+    setSubmitting(true);
+
+    try {
+      const response = await fetch(
+        `${API_BASE}/api/bookings/payment-request`,
+        {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            type: isTourBooking ? "tour" : type,
+            itemId: item.id,
+            title: bookingTitle,
+            destination: isTourBooking
+              ? tour?.destination || ""
+              : item.to || item.name || "",
+            travelDate: item.date || booking.travelDate || null,
+            endDate: isHotelBooking ? item.checkOut || null : null,
+            travellers: isHotelBooking
+              ? item.guests
+              : isBusBooking
+              ? item.seats
+              : travellerCount || item.travellers || 1,
+            amount: finalAmount,
+            currency: "INR",
+            paymentReference: cleanUtr,
+            details: {
+              from: item.from,
+              to: item.to,
+              time: item.time,
+              departure: item.departure,
+              vehicle: item.vehicle,
+              seatType: item.seatType,
+              seats: item.seats,
+              checkIn: item.checkIn,
+              checkOut: item.checkOut,
+              rooms: item.rooms,
+              guests: item.guests,
+              plan: item.plan,
+              coverage: item.coverage,
+              customerName: booking.fullName,
+              customerEmail: booking.email,
+              customerMobile: booking.mobile,
+              coupon: couponApplied ? "TRAVEL10" : "",
+            },
+          }),
+        }
+      );
+
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(
+          data.message ||
+            "Payment request submit nahi hui. Backend route check karein."
+        );
+      }
+
+      setPaymentRequest(data.booking || data);
+    } catch (error) {
+      setPaymentError(
+        error.message ||
+          "Server se connect nahi ho paya. Backend server check karein."
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   if (isBookingMissing) {
     return (
       <div className="payment-not-found">
         <h2>Booking Details Not Found</h2>
         <p>
-          Booking details or price are missing. Please return to the
-          results page and select your booking again.
+          Booking details ya price missing hai. Results page par wapas
+          jaakar booking dobara select karein.
         </p>
-
-        <Link
-          to={explorePath}
-          className="payment-back-button"
-        >
+        <Link to={explorePath} className="payment-back-button">
           <ArrowLeft size={17} />
           Back to {exploreLabel}
         </Link>
@@ -447,219 +352,79 @@ const Payment = () => {
     );
   }
 
-  // -----------------------------------------
-  // PAYMENT SUCCESS
-  // -----------------------------------------
-
-  if (isPaid) {
-    const bookingId = `MKT${Date.now().toString().slice(-8)}`;
-
+  if (paymentRequest) {
     return (
       <div className="payment-success-page">
         <div className="success-card">
-          <div className="success-icon">
-            <Check size={38} />
+          <div className="success-icon pending">
+            <Clock size={38} />
           </div>
 
-          <span className="success-label">
-            PAYMENT SUCCESSFUL
-          </span>
-
-          <h1>Booking Confirmed!</h1>
+          <span className="success-label">PAYMENT VERIFICATION PENDING</span>
+          <h1>Request Submitted!</h1>
 
           <p className="success-message">
-            Your {isCabBooking
-              ? "cab"
-              : isBusBooking
-              ? "bus"
-              : isHotelBooking
-              ? "hotel"
-              : isInsuranceBooking
-              ? "insurance"
-              : "tour"}{" "}
-            booking has been confirmed in this demo.
+            Aapki payment details receive ho gayi hain. Booking abhi confirm
+            nahi hui hai. Account mein payment verify hone ke baad status
+            update hoga.
           </p>
 
           <div className="booking-confirmation">
             <div className="confirmation-row">
-              <span>Booking ID</span>
-              <strong>{bookingId}</strong>
+              <span>Booking Reference</span>
+              <strong>
+                {paymentRequest.bookingReference ||
+                  paymentRequest._id ||
+                  "Pending"}
+              </strong>
             </div>
-
             <div className="confirmation-row">
-              <span>
-                {isCabBooking
-                  ? "Cab"
-                  : isBusBooking
-                  ? "Bus"
-                  : isHotelBooking
-                  ? "Hotel"
-                  : isInsuranceBooking
-                  ? "Insurance Plan"
-                  : "Tour"}
-              </span>
+              <span>Booking</span>
               <strong>{bookingTitle}</strong>
             </div>
-
-            {isTourBooking && (
-              <div className="confirmation-row">
-                <span>Destination</span>
-                <strong>{tour.destination}</strong>
-              </div>
-            )}
-
-            {isCabBooking && (
-              <>
-                <div className="confirmation-row">
-                  <span>Vehicle</span>
-                  <strong>{item.vehicle}</strong>
-                </div>
-                <div className="confirmation-row">
-                  <span>Pickup</span>
-                  <strong>{item.from || "Not specified"}</strong>
-                </div>
-                <div className="confirmation-row">
-                  <span>Drop</span>
-                  <strong>{item.to || "Not specified"}</strong>
-                </div>
-                <div className="confirmation-row">
-                  <span>Pickup Time</span>
-                  <strong>{item.time || "Not specified"}</strong>
-                </div>
-              </>
-            )}
-
-            {isBusBooking && (
-              <>
-                <div className="confirmation-row">
-                  <span>Route</span>
-                  <strong>
-                    {item.from || "Not specified"} →{" "}
-                    {item.to || "Not specified"}
-                  </strong>
-                </div>
-                <div className="confirmation-row">
-                  <span>Departure</span>
-                  <strong>{item.departure || "Not specified"}</strong>
-                </div>
-                <div className="confirmation-row">
-                  <span>Seat Type</span>
-                  <strong>{item.seatType}</strong>
-                </div>
-                <div className="confirmation-row">
-                  <span>Seats</span>
-                  <strong>{item.seats}</strong>
-                </div>
-              </>
-            )}
-
-            {isHotelBooking && (
-              <>
-                <div className="confirmation-row">
-                  <span>Check-in</span>
-                  <strong>{formatDate(item.checkIn || item.date)}</strong>
-                </div>
-                <div className="confirmation-row">
-                  <span>Check-out</span>
-                  <strong>{formatDate(item.checkOut)}</strong>
-                </div>
-                <div className="confirmation-row">
-                  <span>Rooms</span>
-                  <strong>{item.rooms}</strong>
-                </div>
-                <div className="confirmation-row">
-                  <span>Guests</span>
-                  <strong>{item.guests}</strong>
-                </div>
-              </>
-            )}
-
-            {isInsuranceBooking && (
-              <>
-                <div className="confirmation-row">
-                  <span>Plan</span>
-                  <strong>{item.plan || item.subtitle || "Standard Plan"}</strong>
-                </div>
-                {item.coverage && (
-                  <div className="confirmation-row">
-                    <span>Coverage</span>
-                    <strong>{item.coverage}</strong>
-                  </div>
-                )}
-              </>
-            )}
-
             <div className="confirmation-row">
-              <span>{dateLabel}</span>
-              <strong>
-                {formatDate(booking.travelDate)}
-              </strong>
+              <span>UTR / Reference</span>
+              <strong>{utr}</strong>
             </div>
-
             <div className="confirmation-row">
-              <span>
-                {isHotelBooking
-                  ? "Guests"
-                  : isBusBooking
-                  ? "Seats"
-                  : "Travellers"}
-              </span>
-              <strong>
-                {isHotelBooking
-                  ? item.guests
-                  : isBusBooking
-                  ? item.seats
-                  : travellerCount || item.travellers || 1}
-              </strong>
+              <span>Payment Status</span>
+              <strong>Pending Verification</strong>
             </div>
-
             <div className="confirmation-row total">
-              <span>Amount Paid</span>
-              <strong>
-                ₹{finalAmount.toLocaleString("en-IN")}
-              </strong>
+              <span>Amount Submitted</span>
+              <strong>₹{finalAmount.toLocaleString("en-IN")}</strong>
             </div>
           </div>
 
-          <div className="success-contact">
-            <Mail size={16} />
-            <span>
-              Customer email:{" "}
-              <strong>{booking.email || "Not provided"}</strong>
-            </span>
+          <div className="success-actions">
+            <Link to="/" className="success-home-button">
+              Go to Home
+            </Link>
+            <button
+              type="button"
+              className="success-tours-button"
+              onClick={handleExploreMore}
+            >
+              {exploreLabel}
+            </button>
           </div>
-
-            
-  <div className="success-actions">
-    <Link to="/" className="success-home-button">
-      Go to Home
-    </Link>
-
-    <button
-      type="button"
-      className="success-tours-button"
-      onClick={handleExploreMore}
-    >
-      {isBusBooking && <Bus size={17} />}
-      {exploreLabel}
-    </button>
-  </div>
-
         </div>
       </div>
     );
   }
-
-  // -----------------------------------------
-  // PAYMENT PAGE
-  // -----------------------------------------
 
   return (
     <div className="payment-page">
       <div className="payment-container">
         <button
           type="button"
-          onClick={goBack}
+          onClick={() => {
+            if (isTourBooking && tour?.id) {
+              navigate(`/booking/${tour.id}`);
+            } else {
+              navigate(-1);
+            }
+          }}
           className="payment-back-link"
         >
           <ArrowLeft size={17} />
@@ -668,308 +433,59 @@ const Payment = () => {
 
         <div className="payment-header">
           <div>
-            <span className="payment-label">SECURE CHECKOUT</span>
-            <h1>Payment</h1>
-            <p>
-              Complete your payment to confirm your booking.
-            </p>
+            <span className="payment-label">UPI QR CHECKOUT</span>
+            <h1>Complete Your Payment</h1>
+            <p>Scan the QR code using your preferred UPI app.</p>
           </div>
-
           <div className="payment-secure">
-            <Lock size={16} />
-            Secure Payment
+            <ShieldCheck size={16} />
+            Manual Verification
           </div>
         </div>
 
         <div className="payment-layout">
           <div className="payment-main">
-            {/* PAYMENT METHODS */}
-
-            <section className="payment-card">
+            <section className="payment-card qr-payment-card">
               <div className="payment-card-heading">
                 <div className="payment-heading-icon">
-                  <CreditCard size={19} />
+                  <QrCode size={22} />
                 </div>
                 <div>
-                  <h2>Select Payment Method</h2>
-                  <p>Choose your preferred payment option.</p>
+                  <h2>Scan & Pay with PhonePe</h2>
+                  <p>PhonePe, Google Pay, Paytm or another supported UPI app.</p>
                 </div>
               </div>
 
-              <div className="payment-methods">
-                <button
-                  type="button"
-                  className={
-                    paymentMethod === "card"
-                      ? "method-button active"
-                      : "method-button"
-                  }
-                  onClick={() => {
-                    setPaymentMethod("card");
-                    setPaymentError("");
-                  }}
-                >
-                  <CreditCard size={20} />
-                  <span>Card</span>
-                </button>
-
-                <button
-                  type="button"
-                  className={
-                    paymentMethod === "upi"
-                      ? "method-button active"
-                      : "method-button"
-                  }
-                  onClick={() => {
-                    setPaymentMethod("upi");
-                    setPaymentError("");
-                  }}
-                >
-                  <Smartphone size={20} />
-                  <span>UPI</span>
-                </button>
-
-                <button
-                  type="button"
-                  className={
-                    paymentMethod === "netbanking"
-                      ? "method-button active"
-                      : "method-button"
-                  }
-                  onClick={() => {
-                    setPaymentMethod("netbanking");
-                    setPaymentError("");
-                  }}
-                >
-                  <Building2 size={20} />
-                  <span>Net Banking</span>
-                </button>
-
-                <button
-                  type="button"
-                  className={
-                    paymentMethod === "wallet"
-                      ? "method-button active"
-                      : "method-button"
-                  }
-                  onClick={() => {
-                    setPaymentMethod("wallet");
-                    setPaymentError("");
-                  }}
-                >
-                  <Wallet size={20} />
-                  <span>Wallet</span>
-                </button>
+              <div className="qr-payment-amount">
+                <span>Pay exactly</span>
+                <strong>₹{finalAmount.toLocaleString("en-IN")}</strong>
               </div>
 
-              {/* CARD */}
+              <div className="phonepe-qr-wrapper">
+                <img
+                  className="phonepe-qr-image"
+                  src="/images/phonepe-qr.jpeg"
+                  alt="MK Travels PhonePe payment QR code"
+                />
+                <p>Scan this QR code using your UPI app</p>
+              </div>
 
-              {paymentMethod === "card" && (
-                <div className="payment-method-content">
-                  <div className="payment-method-title">
-                    <h3>Card Details</h3>
-                    <span>Visa / Mastercard / RuPay</span>
-                  </div>
+              <ol className="qr-payment-instructions">
+                <li>PhonePe ya apna UPI app open karein.</li>
+                <li>QR scan karke receiver aur amount check karein.</li>
+                <li>₹{finalAmount.toLocaleString("en-IN")} pay karein.</li>
+                <li>Payment successful hone par transaction ka UTR copy karein.</li>
+              </ol>
 
-                  <div className="payment-form">
-                    <div className="payment-input-group full">
-                      <label>Card Number</label>
-                      <div className="payment-input">
-                        <CreditCard size={17} />
-                        <input
-                          type="text"
-                          name="cardNumber"
-                          value={cardData.cardNumber}
-                          onChange={handleCardChange}
-                          placeholder="1234 5678 9012 3456"
-                          inputMode="numeric"
-                          autoComplete="cc-number"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="payment-input-group">
-                      <label>Expiry Date</label>
-                      <input
-                        type="text"
-                        name="expiry"
-                        value={cardData.expiry}
-                        onChange={handleCardChange}
-                        placeholder="MM/YY"
-                        inputMode="numeric"
-                        autoComplete="cc-exp"
-                      />
-                    </div>
-
-                    <div className="payment-input-group">
-                      <label>CVV</label>
-                      <input
-                        type="password"
-                        name="cvv"
-                        value={cardData.cvv}
-                        onChange={handleCardChange}
-                        placeholder="•••"
-                        inputMode="numeric"
-                        autoComplete="cc-csc"
-                      />
-                    </div>
-
-                    <div className="payment-input-group full">
-                      <label>Name on Card</label>
-                      <input
-                        type="text"
-                        name="name"
-                        value={cardData.name}
-                        onChange={handleCardChange}
-                        placeholder="Enter name as on card"
-                        autoComplete="cc-name"
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* UPI */}
-
-              {paymentMethod === "upi" && (
-                <div className="payment-method-content">
-                  <div className="payment-method-title">
-                    <h3>Pay with UPI</h3>
-                    <span>Google Pay, PhonePe, Paytm & more</span>
-                  </div>
-
-                  <div className="upi-options">
-                    <div className="upi-option">
-                      <span className="upi-logo google">G</span>
-                      Google Pay
-                    </div>
-                    <div className="upi-option">
-                      <span className="upi-logo phonepe">P</span>
-                      PhonePe
-                    </div>
-                    <div className="upi-option">
-                      <span className="upi-logo paytm">P</span>
-                      Paytm
-                    </div>
-                  </div>
-
-                  <div className="payment-input-group full">
-                    <label>UPI ID</label>
-                    <div className="payment-input">
-                      <Smartphone size={17} />
-                      <input
-                        type="text"
-                        value={upiId}
-                        onChange={(event) => {
-                          setUpiId(event.target.value);
-                          setPaymentError("");
-                        }}
-                        placeholder="example@upi"
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* NET BANKING */}
-
-              {paymentMethod === "netbanking" && (
-                <div className="payment-method-content">
-                  <div className="payment-method-title">
-                    <h3>Select Your Bank</h3>
-                    <span>Demo bank selection only.</span>
-                  </div>
-
-                  <div className="bank-grid">
-                    {[
-                      "SBI",
-                      "HDFC",
-                      "ICICI",
-                      "Axis",
-                      "Kotak",
-                      "Other Banks",
-                    ].map((bank) => (
-                      <button
-                        key={bank}
-                        type="button"
-                        className={
-                          selectedBank === bank
-                            ? "bank-option active"
-                            : "bank-option"
-                        }
-                        onClick={() => {
-                          setSelectedBank(bank);
-                          setPaymentError("");
-                        }}
-                      >
-                        {bank}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* WALLET */}
-
-              {paymentMethod === "wallet" && (
-                <div className="payment-method-content">
-                  <div className="payment-method-title">
-                    <h3>Select Wallet</h3>
-                    <span>Demo wallet selection only.</span>
-                  </div>
-
-                  <div className="wallet-grid">
-                    {[
-                      "Paytm Wallet",
-                      "Amazon Pay",
-                      "Mobikwik",
-                      "Freecharge",
-                    ].map((wallet) => (
-                      <button
-                        key={wallet}
-                        type="button"
-                        className={
-                          selectedWallet === wallet
-                            ? "wallet-option active"
-                            : "wallet-option"
-                        }
-                        onClick={() => {
-                          setSelectedWallet(wallet);
-                          setPaymentError("");
-                        }}
-                      >
-                        <Wallet size={20} />
-                        {wallet}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {paymentError && (
-                <div className="payment-error">
-                  {paymentError}
-                </div>
-              )}
-
-              <button
-                type="button"
-                className="pay-now-button"
-                onClick={handlePayment}
-              >
-                <Lock size={16} />
-                Pay ₹{finalAmount.toLocaleString("en-IN")}
-              </button>
-
-              <div className="payment-protection">
-                <ShieldCheck size={17} />
+              <div className="payment-warning">
+                <ShieldCheck size={18} />
                 <span>
-                  Demo checkout only. No real payment is processed.
+                  Payment karne se pehle UPI app mein receiver ka naam aur
+                  amount verify karein. Apna UPI PIN website par kabhi enter
+                  na karein.
                 </span>
               </div>
             </section>
-
-            {/* COUPON */}
 
             <section className="payment-card coupon-card">
               <div className="coupon-heading">
@@ -978,7 +494,7 @@ const Payment = () => {
                 </div>
                 <div>
                   <h2>Have a Coupon?</h2>
-                  <p>Apply a coupon and save on your booking.</p>
+                  <p>Apply TRAVEL10 to get 10% off.</p>
                 </div>
               </div>
 
@@ -994,7 +510,6 @@ const Payment = () => {
                   placeholder="Enter coupon code"
                   disabled={couponApplied}
                 />
-
                 <button
                   type="button"
                   onClick={applyCoupon}
@@ -1010,15 +525,77 @@ const Payment = () => {
 
               {couponApplied && (
                 <div className="coupon-success">
-                  <Check size={14} />
-                  TRAVEL10 applied — You saved ₹
-                  {discount.toLocaleString("en-IN")}
+                  <CheckCircle2 size={15} />
+                  TRAVEL10 applied. Saved ₹{discount.toLocaleString("en-IN")}.
+                  Pay the updated amount shown above.
                 </div>
               )}
             </section>
-          </div>
 
-          {/* RIGHT SUMMARY */}
+            <section className="payment-card utr-card">
+              <div className="payment-card-heading">
+                <div className="payment-heading-icon">
+                  <CheckCircle2 size={20} />
+                </div>
+                <div>
+                  <h2>Submit Payment Reference</h2>
+                  <p>Payment complete karne ke baad hi form submit karein.</p>
+                </div>
+              </div>
+
+              <form onSubmit={handlePaymentRequest}>
+                <div className="payment-input-group full">
+                  <label htmlFor="payment-utr">UPI UTR / Transaction Reference</label>
+                  <input
+                    id="payment-utr"
+                    type="text"
+                    value={utr}
+                    onChange={(event) => {
+                      setUtr(event.target.value);
+                      setPaymentError("");
+                    }}
+                    placeholder="Enter transaction reference number"
+                    autoComplete="off"
+                    maxLength={30}
+                    required
+                  />
+                  <small>
+                    UTR aapke UPI app ki transaction details mein milta hai.
+                  </small>
+                </div>
+
+                {paymentError && (
+                  <div className="payment-error">{paymentError}</div>
+                )}
+
+                <button
+                  type="submit"
+                  className="pay-now-button"
+                  disabled={submitting}
+                >
+                  {submitting ? (
+                    <>
+                      <LoaderCircle size={17} />
+                      Submitting...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 size={17} />
+                      I Have Paid ₹{finalAmount.toLocaleString("en-IN")}
+                    </>
+                  )}
+                </button>
+              </form>
+
+              <div className="payment-protection">
+                <Clock size={17} />
+                <span>
+                  Submission ke baad status Pending Verification rahega.
+                  Verification ke bina booking confirmed nahi hogi.
+                </span>
+              </div>
+            </section>
+          </div>
 
           <aside className="payment-summary">
             <div className="payment-tour">
@@ -1035,28 +612,9 @@ const Payment = () => {
 
               <div>
                 <h3>{bookingTitle}</h3>
-
-                <span>
-                  {isTourBooking ? (
-                    <>
-                      <MapPin size={13} />
-                      {tour.destination}
-                    </>
-                  ) : (
-                    bookingSubtitle
-                  )}
-                </span>
-
-                {isTourBooking && (
-                  <span className="payment-tour-rating">
-                    <Star size={12} fill="currentColor" />
-                    {tour.rating}
-                  </span>
-                )}
+                <span>{bookingSubtitle}</span>
               </div>
             </div>
-
-            {/* BOOKING DETAILS */}
 
             <div className="summary-details">
               <h3>Booking Details</h3>
@@ -1064,59 +622,46 @@ const Payment = () => {
               <div className="summary-detail-row">
                 <CalendarDays size={15} />
                 <span>{dateLabel}</span>
-                <strong>
-                  {formatDate(booking.travelDate)}
-                </strong>
+                <strong>{formatDate(booking.travelDate)}</strong>
               </div>
 
-              {isBusBooking && (
+              {(isBusBooking || isCabBooking) && (
                 <>
                   <div className="summary-detail-row">
                     <MapPin size={15} />
-                    <span>From</span>
+                    <span>From / Pickup</span>
                     <strong>{item.from || "Not specified"}</strong>
                   </div>
                   <div className="summary-detail-row">
                     <MapPin size={15} />
-                    <span>To</span>
+                    <span>To / Drop</span>
                     <strong>{item.to || "Not specified"}</strong>
-                  </div>
-                  <div className="summary-detail-row">
-                    <Clock size={15} />
-                    <span>Departure</span>
-                    <strong>{item.departure || "Not specified"}</strong>
-                  </div>
-                  <div className="summary-detail-row">
-                    <Users size={15} />
-                    <span>Seats</span>
-                    <strong>{item.seats}</strong>
                   </div>
                 </>
               )}
 
               {isCabBooking && (
-                <>
-                  <div className="summary-detail-row">
-                    <MapPin size={15} />
-                    <span>Pickup</span>
-                    <strong>{item.from || "Not specified"}</strong>
-                  </div>
-                  <div className="summary-detail-row">
-                    <MapPin size={15} />
-                    <span>Drop</span>
-                    <strong>{item.to || "Not specified"}</strong>
-                  </div>
-                  <div className="summary-detail-row">
-                    <Clock size={15} />
-                    <span>Pickup Time</span>
-                    <strong>{item.time || "Not specified"}</strong>
-                  </div>
-                  <div className="summary-detail-row">
-                    <Users size={15} />
-                    <span>Travellers</span>
-                    <strong>{item.travellers}</strong>
-                  </div>
-                </>
+                <div className="summary-detail-row">
+                  <Clock size={15} />
+                  <span>Pickup Time</span>
+                  <strong>{item.time || "Not specified"}</strong>
+                </div>
+              )}
+
+              {isBusBooking && (
+                <div className="summary-detail-row">
+                  <Users size={15} />
+                  <span>Seats</span>
+                  <strong>{item.seats}</strong>
+                </div>
+              )}
+
+              {isCabBooking && (
+                <div className="summary-detail-row">
+                  <Users size={15} />
+                  <span>Travellers</span>
+                  <strong>{item.travellers}</strong>
+                </div>
               )}
 
               {isHotelBooking && (
@@ -1153,13 +698,6 @@ const Payment = () => {
                       <strong>{item.coverage}</strong>
                     </div>
                   )}
-                  {item.durationLabel && (
-                    <div className="summary-detail-row">
-                      <Clock size={15} />
-                      <span>Duration</span>
-                      <strong>{item.durationLabel}</strong>
-                    </div>
-                  )}
                 </>
               )}
 
@@ -1179,34 +717,17 @@ const Payment = () => {
               )}
             </div>
 
-            {/* PRICE SUMMARY */}
-
             <div className="payment-price">
               <h3>Price Summary</h3>
-
               <div className="payment-price-row">
-                <span>
-                  {isCabBooking
-                    ? "Cab Fare"
-                    : isBusBooking
-                    ? "Bus Fare"
-                    : isHotelBooking
-                    ? "Hotel Price"
-                    : isInsuranceBooking
-                    ? "Insurance Premium"
-                    : "Package Price"}
-                </span>
-                <strong>
-                  ₹{initialTotal.toLocaleString("en-IN")}
-                </strong>
+                <span>Booking Amount</span>
+                <strong>₹{initialTotal.toLocaleString("en-IN")}</strong>
               </div>
 
               {couponApplied && (
                 <div className="payment-price-row discount">
                   <span>Coupon Discount</span>
-                  <strong>
-                    - ₹{discount.toLocaleString("en-IN")}
-                  </strong>
+                  <strong>- ₹{discount.toLocaleString("en-IN")}</strong>
                 </div>
               )}
 
@@ -1214,48 +735,42 @@ const Payment = () => {
 
               <div className="payment-total">
                 <span>Total Payable</span>
-                <strong>
-                  ₹{finalAmount.toLocaleString("en-IN")}
-                </strong>
+                <strong>₹{finalAmount.toLocaleString("en-IN")}</strong>
               </div>
-
-              <small>Inclusive of applicable charges</small>
+              <small>UPI app mein bhi yahi amount verify karein.</small>
             </div>
-
-            {/* CUSTOMER DETAILS */}
 
             <div className="customer-summary">
               <h3>Customer Details</h3>
-
               <div>
                 <User size={14} />
                 <span>{booking.fullName || "Name not provided"}</span>
               </div>
-
               <div>
                 <Mail size={14} />
                 <span>{booking.email || "Email not provided"}</span>
               </div>
-
               <div>
                 <Phone size={14} />
-                <span>
-                  {booking.mobile
-                    ? `+91 ${booking.mobile}`
-                    : "Mobile not provided"}
-                </span>
+                <span>{booking.mobile || "Mobile not provided"}</span>
               </div>
             </div>
-
-            {/* SECURITY */}
 
             <div className="payment-summary-security">
               <ShieldCheck size={19} />
               <div>
-                <strong>Secure Checkout</strong>
-                <span>Demo payment flow for your booking.</span>
+                <strong>Payment Verification</strong>
+                <span>Booking is confirmed only after payment verification.</span>
               </div>
             </div>
+
+            <button
+              type="button"
+              className="success-tours-button"
+              onClick={handleExploreMore}
+            >
+              {exploreLabel}
+            </button>
           </aside>
         </div>
       </div>
