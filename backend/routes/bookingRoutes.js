@@ -5,10 +5,322 @@ import mongoose from "mongoose";
 import Booking from "../models/Booking.js";
 import { requireAuth } from "../middleware/auth.js";
 
+import multer from "multer";
+import path from "node:path";
+import fs from "node:fs";
+import { fileURLToPath } from "node:url";
+import { randomUUID } from "node:crypto";
+
 const router = Router();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const paymentUploadDir = path.resolve(
+  __dirname,
+  "../uploads/payment-screenshots"
+);
+
+fs.mkdirSync(paymentUploadDir, { recursive: true });
+
+const paymentStorage = multer.diskStorage({
+  destination: (_req, _file, callback) => {
+    callback(null, paymentUploadDir);
+  },
+
+  filename: (_req, file, callback) => {
+    const extensionByMime = {
+      "image/jpeg": ".jpg",
+      "image/png": ".png",
+      "image/webp": ".webp",
+    };
+
+    callback(
+      null,
+      `${randomUUID()}${extensionByMime[file.mimetype] || ".img"}`
+    );
+  },
+});
+
+const paymentScreenshotUpload = multer({
+  storage: paymentStorage,
+  limits: {
+    fileSize: 5 * 1024 * 1024,
+    files: 1,
+  },
+  fileFilter: (_req, file, callback) => {
+    const allowedTypes = [
+      "image/jpeg",
+      "image/png",
+      "image/webp",
+    ];
+
+    if (!allowedTypes.includes(file.mimetype)) {
+      return callback(
+        new Error("Only JPG, PNG, and WebP screenshots are allowed.")
+      );
+    }
+
+    callback(null, true);
+  },
+});
+
+function deleteUploadedFile(filePath) {
+  if (filePath) {
+    fs.promises.unlink(filePath).catch(() => {});
+  }
+}
 
 // All booking routes require authentication.
 router.use(requireAuth);
+
+// POST /api/bookings/payment-request
+// Saves payment proof for manual verification.
+// Uploading a screenshot never confirms payment.
+router.post(
+  "/payment-request",
+  (req, res, next) => {
+    paymentScreenshotUpload.single("paymentScreenshot")(
+      req,
+      res,
+      (error) => {
+        if (!error) return next();
+
+        const statusCode =
+          error instanceof multer.MulterError &&
+          error.code === "LIMIT_FILE_SIZE"
+            ? 400
+            : 400;
+
+        return res.status(statusCode).json({
+          message:
+            error instanceof multer.MulterError &&
+            error.code === "LIMIT_FILE_SIZE"
+              ? "Screenshot size maximum 5 MB ho sakta hai."
+              : error.message ||
+                "Screenshot upload nahi ho paya.",
+        });
+      }
+    );
+  },
+  async (req, res) => {
+    let uploadedFilePath = req.file?.path;
+
+    try {
+      if (!req.file) {
+        return res.status(400).json({
+          message: "Payment screenshot upload karein.",
+        });
+      }
+
+      let bookingData;
+
+      try {
+        bookingData = JSON.parse(req.body.bookingData || "{}");
+      } catch {
+        deleteUploadedFile(uploadedFilePath);
+
+        return res.status(400).json({
+          message: "Invalid booking data.",
+        });
+      }
+
+      const {
+        type,
+        title,
+        destination = "",
+        travelDate,
+        endDate,
+        travellers = 1,
+        amount,
+        currency = "INR",
+        details = {},
+      } = bookingData;
+
+      const allowedTypes = [
+        "tour",
+        "bus",
+        "hotel",
+        "cab",
+        "insurance",
+      ];
+
+      if (!allowedTypes.includes(type)) {
+        deleteUploadedFile(uploadedFilePath);
+
+        return res.status(400).json({
+          message: "Invalid booking type.",
+        });
+      }
+
+      if (
+        typeof title !== "string" ||
+        !title.trim() ||
+        title.trim().length > 200
+      ) {
+        deleteUploadedFile(uploadedFilePath);
+
+        return res.status(400).json({
+          message: "Valid booking title is required.",
+        });
+      }
+
+      if (
+        typeof destination !== "string" ||
+        destination.length > 200
+      ) {
+        deleteUploadedFile(uploadedFilePath);
+
+        return res.status(400).json({
+          message: "Invalid destination.",
+        });
+      }
+
+      if (
+        !Number.isInteger(travellers) ||
+        travellers < 1 ||
+        travellers > 50
+      ) {
+        deleteUploadedFile(uploadedFilePath);
+
+        return res.status(400).json({
+          message: "Travellers must be between 1 and 50.",
+        });
+      }
+
+      if (
+        !Number.isFinite(amount) ||
+        amount <= 0 ||
+        amount > 10000000 ||
+        currency !== "INR"
+      ) {
+        deleteUploadedFile(uploadedFilePath);
+
+        return res.status(400).json({
+          message: "Invalid booking amount or currency.",
+        });
+      }
+
+      if (
+        !details ||
+        typeof details !== "object" ||
+        Array.isArray(details)
+      ) {
+        deleteUploadedFile(uploadedFilePath);
+
+        return res.status(400).json({
+          message: "Invalid booking details.",
+        });
+      }
+
+      const parseOptionalDate = (value, fieldName) => {
+        if (value === undefined || value === null || value === "") {
+          return null;
+        }
+
+        if (
+          typeof value !== "string" ||
+          Number.isNaN(Date.parse(value))
+        ) {
+          throw new Error(`Invalid ${fieldName}.`);
+        }
+
+        const date = new Date(value);
+
+        if (!Number.isFinite(date.getTime())) {
+          throw new Error(`Invalid ${fieldName}.`);
+        }
+
+        return date;
+      };
+
+      let parsedTravelDate;
+      let parsedEndDate;
+
+      try {
+        parsedTravelDate = parseOptionalDate(
+          travelDate,
+          "travel date"
+        );
+
+        parsedEndDate = parseOptionalDate(
+          endDate,
+          "end date"
+        );
+      } catch (error) {
+        deleteUploadedFile(uploadedFilePath);
+
+        return res.status(400).json({
+          message: error.message,
+        });
+      }
+
+      if (
+        parsedTravelDate &&
+        parsedEndDate &&
+        parsedEndDate < parsedTravelDate
+      ) {
+        deleteUploadedFile(uploadedFilePath);
+
+        return res.status(400).json({
+          message: "End date cannot be before travel date.",
+        });
+      }
+
+      const booking = await Booking.create({
+        user: new mongoose.Types.ObjectId(req.userId),
+        type,
+        title: title.trim(),
+        destination: destination.trim(),
+        travelDate: parsedTravelDate,
+        endDate: parsedEndDate,
+        travellers,
+        details,
+        amount,
+        currency: "INR",
+
+        // Never confirm payment just because a screenshot was uploaded.
+        status: "pending",
+        paymentStatus: "pending",
+        paymentVerificationStatus: "pending_verification",
+        paymentScreenshot: path
+          .relative(paymentUploadDir, uploadedFilePath)
+          .replace(/\\/g, "/"),
+        paymentSubmittedAt: new Date(),
+      });
+
+      return res.status(201).json({
+        message:
+          "Payment screenshot submitted. Booking is pending manual verification.",
+        booking: {
+          _id: booking._id,
+          bookingReference: booking.bookingReference,
+          status: booking.status,
+          paymentStatus: booking.paymentStatus,
+          paymentVerificationStatus:
+            booking.paymentVerificationStatus,
+          amount: booking.amount,
+          currency: booking.currency,
+          paymentSubmittedAt: booking.paymentSubmittedAt,
+        },
+      });
+    } catch (error) {
+      deleteUploadedFile(uploadedFilePath);
+
+      if (error.name === "ValidationError") {
+        return res.status(400).json({
+          message: "Please check the booking details.",
+        });
+      }
+
+      console.error("Payment request error:", error.message);
+
+      return res.status(500).json({
+        message: "Unable to submit payment screenshot.",
+      });
+    }
+  }
+);
 
 // POST /api/bookings
 router.post("/", async (req, res) => {

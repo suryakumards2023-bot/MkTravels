@@ -88,6 +88,21 @@ const bookingSchema = new mongoose.Schema(
       default: "",
       maxlength: 200,
     },
+    paymentScreenshot: {
+  type: String,
+  default: "",
+},
+
+paymentSubmittedAt: {
+  type: Date,
+  default: null,
+},
+
+paymentVerificationStatus: {
+  type: String,
+  enum: ["not_submitted", "pending_verification", "verified", "rejected"],
+  default: "not_submitted",
+},
   },
   {
     timestamps: true,

@@ -1,6 +1,7 @@
+
 import "./Payment.css";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
@@ -19,14 +20,21 @@ import {
   Phone,
   TicketPercent,
   QrCode,
-  Copy,
   LoaderCircle,
+  Smartphone,
+  ImagePlus,
 } from "lucide-react";
 
 import tours from "../data/tours";
+import QRCode from "qrcode";
 
-const API_BASE =
-  import.meta.env.VITE_API_URL || "http://localhost:5000";
+
+const API_BASE = (
+  import.meta.env.VITE_API_URL || "http://localhost:5000"
+).replace(/\/+$/, "").replace(/\/api$/, "");
+
+const UPI_ID = "8051936436-2@axl";
+const MAX_SCREENSHOT_SIZE = 5 * 1024 * 1024;
 
 const Payment = () => {
   const { id } = useParams();
@@ -88,7 +96,6 @@ const Payment = () => {
     guests: Number(params.get("guests") || 1),
     plan: params.get("plan") || params.get("planName") || "",
     coverage: params.get("coverage") || "",
-    durationLabel: params.get("durationLabel") || "",
   };
 
   const tour = isTourBooking
@@ -151,18 +158,122 @@ const Payment = () => {
     : tour?.destination || "";
 
   const [coupon, setCoupon] = useState("");
+  const [upiQrDataUrl, setUpiQrDataUrl] = useState("");
   const [couponApplied, setCouponApplied] = useState(false);
   const [couponError, setCouponError] = useState("");
   const [paymentError, setPaymentError] = useState("");
-  const [utr, setUtr] = useState("");
+  const [paymentScreenshot, setPaymentScreenshot] = useState(null);
+  const [screenshotPreview, setScreenshotPreview] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [paymentRequest, setPaymentRequest] = useState(null);
 
-  const discount = couponApplied
-    ? Math.round(initialTotal * 0.1)
-    : 0;
-
+  const discount = couponApplied ? Math.round(initialTotal * 0.1) : 0;
   const finalAmount = Math.max(0, initialTotal - discount);
+  useEffect(() => {
+  if (!Number.isFinite(finalAmount) || finalAmount <= 0) {
+    setUpiQrDataUrl("");
+    return;
+  }
+
+  const upiParams = new URLSearchParams({
+    pa: UPI_ID,
+    pn: "MK Travels",
+    am: finalAmount.toFixed(2),
+    cu: "INR",
+    tn: `MK Travels - ${bookingTitle}`.slice(0, 80),
+  });
+
+  const upiUrl = `upi://pay?${upiParams.toString()}`;
+
+  QRCode.toDataURL(upiUrl, {
+    width: 260,
+    margin: 2,
+    errorCorrectionLevel: "M",
+  })
+    .then((dataUrl) => setUpiQrDataUrl(dataUrl))
+    .catch((error) => {
+      console.error("UPI QR generation failed:", error);
+      setUpiQrDataUrl("");
+    });
+}, [finalAmount, bookingTitle]);
+
+  useEffect(() => {
+    return () => {
+      if (screenshotPreview) {
+        URL.revokeObjectURL(screenshotPreview);
+      }
+    };
+  }, [screenshotPreview]);
+
+  
+const openUPIPayment = () => {
+  setPaymentError("");
+
+  if (!Number.isFinite(finalAmount) || finalAmount <= 0) {
+    setPaymentError("Booking amount valid nahi hai.");
+    return;
+  }
+
+  const upiParams = new URLSearchParams({
+    pa: UPI_ID,
+    pn: "MK Travels",
+    am: finalAmount.toFixed(2),
+    cu: "INR",
+    tn: `MK Travels - ${bookingTitle}`.slice(0, 80),
+  });
+
+  const upiUrl = `upi://pay?${upiParams.toString()}`;
+
+  // Laptop par QR code se payment karne ka option available hai.
+  if (!/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+    setPaymentError(
+      "Laptop par UPI app direct open nahi ho sakta. Neeche diye gaye QR code ko mobile UPI app se scan karein."
+    );
+    document.querySelector(".phonepe-qr-wrapper")?.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+    });
+    return;
+  }
+
+  // Mobile par UPI app open karne ki koshish.
+  window.location.href = upiUrl;
+};
+
+
+  const handleScreenshotChange = (event) => {
+    const file = event.target.files?.[0];
+
+    setPaymentError("");
+
+    if (!file) return;
+
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+
+    if (!allowedTypes.includes(file.type)) {
+      setPaymentError("Sirf JPG, PNG ya WebP image upload karein.");
+      event.target.value = "";
+      return;
+    }
+
+    if (file.size > MAX_SCREENSHOT_SIZE) {
+      setPaymentError("Screenshot ka size maximum 5 MB ho sakta hai.");
+      event.target.value = "";
+      return;
+    }
+
+    setPaymentScreenshot(file);
+    setScreenshotPreview(URL.createObjectURL(file));
+  };
+
+  const removeScreenshot = () => {
+    setPaymentScreenshot(null);
+    setScreenshotPreview("");
+    setPaymentError("");
+
+    const input = document.getElementById("payment-screenshot");
+    if (input) input.value = "";
+  };
 
   const applyCoupon = () => {
     setCouponError("");
@@ -195,9 +306,9 @@ const Payment = () => {
   };
 
   const travellerCount =
-    (Number(booking.adults) || 0) +
-    (Number(booking.children) || 0) +
-    (Number(booking.infants) || 0);
+    Number(booking.adults || 0) +
+    Number(booking.children || 0) +
+    Number(booking.infants || 0);
 
   const dateLabel = isHotelBooking ? "Check-in Date" : "Travel Date";
 
@@ -238,23 +349,20 @@ const Payment = () => {
   };
 
   const isBookingMissing = isTourBooking
-    ? !tour || initialTotal <= 0
-    : !item.id || initialTotal <= 0;
+    ? !tour || !Number.isFinite(initialTotal) || initialTotal <= 0
+    : !item.id || !Number.isFinite(initialTotal) || initialTotal <= 0;
 
-  // Payment request stays pending until the owner verifies the transaction.
   const handlePaymentRequest = async (event) => {
     event.preventDefault();
     setPaymentError("");
 
-    if (initialTotal <= 0 || !Number.isFinite(finalAmount)) {
+    if (!Number.isFinite(finalAmount) || finalAmount <= 0) {
       setPaymentError("Booking amount valid nahi hai. Dobara booking select karein.");
       return;
     }
 
-    const cleanUtr = utr.trim();
-
-    if (!/^[A-Za-z0-9-]{8,30}$/.test(cleanUtr)) {
-      setPaymentError("Valid UTR / transaction reference number enter karein.");
+    if (!paymentScreenshot) {
+      setPaymentError("Payment screenshot upload karein.");
       return;
     }
 
@@ -268,51 +376,56 @@ const Payment = () => {
     setSubmitting(true);
 
     try {
+      const formData = new FormData();
+
+      formData.append("paymentScreenshot", paymentScreenshot);
+
+      formData.append(
+        "bookingData",
+        JSON.stringify({
+          type: isTourBooking ? "tour" : type,
+          itemId: item.id,
+          title: bookingTitle,
+          destination: isTourBooking
+            ? tour?.destination || ""
+            : item.to || item.name || "",
+          travelDate: item.date || booking.travelDate || null,
+          endDate: isHotelBooking ? item.checkOut || null : null,
+          travellers: isHotelBooking
+            ? item.guests
+            : isBusBooking
+            ? item.seats
+            : travellerCount || item.travellers || 1,
+          amount: finalAmount,
+          currency: "INR",
+          details: {
+            from: item.from,
+            to: item.to,
+            time: item.time,
+            departure: item.departure,
+            vehicle: item.vehicle,
+            seatType: item.seatType,
+            seats: item.seats,
+            checkIn: item.checkIn,
+            checkOut: item.checkOut,
+            rooms: item.rooms,
+            guests: item.guests,
+            plan: item.plan,
+            coverage: item.coverage,
+            customerName: booking.fullName,
+            customerEmail: booking.email,
+            customerMobile: booking.mobile,
+            coupon: couponApplied ? "TRAVEL10" : "",
+          },
+        })
+      );
+
       const response = await fetch(
         `${API_BASE}/api/bookings/payment-request`,
         {
           method: "POST",
           credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            type: isTourBooking ? "tour" : type,
-            itemId: item.id,
-            title: bookingTitle,
-            destination: isTourBooking
-              ? tour?.destination || ""
-              : item.to || item.name || "",
-            travelDate: item.date || booking.travelDate || null,
-            endDate: isHotelBooking ? item.checkOut || null : null,
-            travellers: isHotelBooking
-              ? item.guests
-              : isBusBooking
-              ? item.seats
-              : travellerCount || item.travellers || 1,
-            amount: finalAmount,
-            currency: "INR",
-            paymentReference: cleanUtr,
-            details: {
-              from: item.from,
-              to: item.to,
-              time: item.time,
-              departure: item.departure,
-              vehicle: item.vehicle,
-              seatType: item.seatType,
-              seats: item.seats,
-              checkIn: item.checkIn,
-              checkOut: item.checkOut,
-              rooms: item.rooms,
-              guests: item.guests,
-              plan: item.plan,
-              coverage: item.coverage,
-              customerName: booking.fullName,
-              customerEmail: booking.email,
-              customerMobile: booking.mobile,
-              coupon: couponApplied ? "TRAVEL10" : "",
-            },
-          }),
+          body: formData,
         }
       );
 
@@ -321,7 +434,7 @@ const Payment = () => {
       if (!response.ok) {
         throw new Error(
           data.message ||
-            "Payment request submit nahi hui. Backend route check karein."
+            "Payment screenshot submit nahi hua. Backend route check karein."
         );
       }
 
@@ -364,9 +477,9 @@ const Payment = () => {
           <h1>Request Submitted!</h1>
 
           <p className="success-message">
-            Aapki payment details receive ho gayi hain. Booking abhi confirm
-            nahi hui hai. Account mein payment verify hone ke baad status
-            update hoga.
+            Aapka payment screenshot receive ho gaya hai. Booking abhi
+            confirm nahi hui hai. Owner payment verify karne ke baad hi
+            booking status update karega.
           </p>
 
           <div className="booking-confirmation">
@@ -378,18 +491,22 @@ const Payment = () => {
                   "Pending"}
               </strong>
             </div>
+
             <div className="confirmation-row">
               <span>Booking</span>
               <strong>{bookingTitle}</strong>
             </div>
+
             <div className="confirmation-row">
-              <span>UTR / Reference</span>
-              <strong>{utr}</strong>
+              <span>Payment Proof</span>
+              <strong>Screenshot Submitted</strong>
             </div>
+
             <div className="confirmation-row">
               <span>Payment Status</span>
               <strong>Pending Verification</strong>
             </div>
+
             <div className="confirmation-row total">
               <span>Amount Submitted</span>
               <strong>₹{finalAmount.toLocaleString("en-IN")}</strong>
@@ -400,6 +517,7 @@ const Payment = () => {
             <Link to="/" className="success-home-button">
               Go to Home
             </Link>
+
             <button
               type="button"
               className="success-tours-button"
@@ -435,8 +553,9 @@ const Payment = () => {
           <div>
             <span className="payment-label">UPI QR CHECKOUT</span>
             <h1>Complete Your Payment</h1>
-            <p>Scan the QR code using your preferred UPI app.</p>
+            <p>UPI app se pay karein ya QR code scan karein.</p>
           </div>
+
           <div className="payment-secure">
             <ShieldCheck size={16} />
             Manual Verification
@@ -450,9 +569,10 @@ const Payment = () => {
                 <div className="payment-heading-icon">
                   <QrCode size={22} />
                 </div>
+
                 <div>
-                  <h2>Scan & Pay with PhonePe</h2>
-                  <p>PhonePe, Google Pay, Paytm or another supported UPI app.</p>
+                  <h2>Scan & Pay with UPI</h2>
+                  <p>PhonePe, Google Pay, Paytm ya supported UPI app.</p>
                 </div>
               </div>
 
@@ -461,28 +581,49 @@ const Payment = () => {
                 <strong>₹{finalAmount.toLocaleString("en-IN")}</strong>
               </div>
 
+              <button
+                type="button"
+                className="pay-now-button upi-app-button"
+                onClick={openUPIPayment}
+              >
+                <Smartphone size={18} />
+                Pay ₹{finalAmount.toLocaleString("en-IN")} via UPI App
+              </button>
+
+              <p className="upi-app-note">
+                Mobile par tap karne se supported UPI app khul sakta hai.
+                Payment karne se pehle receiver aur amount check karein.
+              </p>
+
               <div className="phonepe-qr-wrapper">
-                <img
-                  className="phonepe-qr-image"
-                  src="/images/phonepe-qr.jpeg"
-                  alt="MK Travels PhonePe payment QR code"
-                />
-                <p>Scan this QR code using your UPI app</p>
-              </div>
+  {upiQrDataUrl ? (
+    <img
+      className="phonepe-qr-image"
+      src={upiQrDataUrl}
+      alt={`MK Travels UPI QR code for ₹${finalAmount.toFixed(2)}`}
+    />
+  ) : (
+    <p>QR code generate ho raha hai...</p>
+  )}
+
+  <p>
+    Mobile se QR scan karein. UPI app mein receiver aur amount
+    verify karke payment complete karein.
+  </p>
+</div>
 
               <ol className="qr-payment-instructions">
-                <li>PhonePe ya apna UPI app open karein.</li>
-                <li>QR scan karke receiver aur amount check karein.</li>
-                <li>₹{finalAmount.toLocaleString("en-IN")} pay karein.</li>
-                <li>Payment successful hone par transaction ka UTR copy karein.</li>
+                <li>UPI app open karein ya upar wala button tap karein.</li>
+                <li>QR scan karein, phir receiver aur amount verify karein.</li>
+                <li>₹{finalAmount.toLocaleString("en-IN")} payment complete karein.</li>
+                <li>Payment ke baad screenshot save karein aur neeche upload karein.</li>
               </ol>
 
               <div className="payment-warning">
                 <ShieldCheck size={18} />
                 <span>
-                  Payment karne se pehle UPI app mein receiver ka naam aur
-                  amount verify karein. Apna UPI PIN website par kabhi enter
-                  na karein.
+                  UPI PIN sirf apne UPI app mein enter karein, website par
+                  kabhi nahi. Payment karne se pehle receiver details verify karein.
                 </span>
               </div>
             </section>
@@ -492,6 +633,7 @@ const Payment = () => {
                 <div className="coupon-icon">
                   <TicketPercent size={19} />
                 </div>
+
                 <div>
                   <h2>Have a Coupon?</h2>
                   <p>Apply TRAVEL10 to get 10% off.</p>
@@ -510,6 +652,7 @@ const Payment = () => {
                   placeholder="Enter coupon code"
                   disabled={couponApplied}
                 />
+
                 <button
                   type="button"
                   onClick={applyCoupon}
@@ -535,34 +678,51 @@ const Payment = () => {
             <section className="payment-card utr-card">
               <div className="payment-card-heading">
                 <div className="payment-heading-icon">
-                  <CheckCircle2 size={20} />
+                  <ImagePlus size={21} />
                 </div>
+
                 <div>
-                  <h2>Submit Payment Reference</h2>
-                  <p>Payment complete karne ke baad hi form submit karein.</p>
+                  <h2>Upload Payment Screenshot</h2>
+                  <p>Payment complete hone ke baad screenshot upload karein.</p>
                 </div>
               </div>
 
               <form onSubmit={handlePaymentRequest}>
-                <div className="payment-input-group full">
-                  <label htmlFor="payment-utr">UPI UTR / Transaction Reference</label>
+                <label
+                  htmlFor="payment-screenshot"
+                  className="payment-upload-box"
+                >
+                  <ImagePlus size={30} />
+
+                  <strong>
+                    {paymentScreenshot
+                      ? paymentScreenshot.name
+                      : "Choose Payment Screenshot"}
+                  </strong>
+
+                  <span>JPG, PNG or WebP · Maximum 5 MB</span>
+
                   <input
-                    id="payment-utr"
-                    type="text"
-                    value={utr}
-                    onChange={(event) => {
-                      setUtr(event.target.value);
-                      setPaymentError("");
-                    }}
-                    placeholder="Enter transaction reference number"
-                    autoComplete="off"
-                    maxLength={30}
-                    required
+                    id="payment-screenshot"
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    onChange={handleScreenshotChange}
+                    hidden
                   />
-                  <small>
-                    UTR aapke UPI app ki transaction details mein milta hai.
-                  </small>
-                </div>
+                </label>
+
+                {screenshotPreview && (
+                  <div className="payment-screenshot-preview">
+                    <img
+                      src={screenshotPreview}
+                      alt="Selected payment screenshot preview"
+                    />
+
+                    <button type="button" onClick={removeScreenshot}>
+                      Remove Screenshot
+                    </button>
+                  </div>
+                )}
 
                 {paymentError && (
                   <div className="payment-error">{paymentError}</div>
@@ -571,17 +731,17 @@ const Payment = () => {
                 <button
                   type="submit"
                   className="pay-now-button"
-                  disabled={submitting}
+                  disabled={submitting || !paymentScreenshot}
                 >
                   {submitting ? (
                     <>
                       <LoaderCircle size={17} />
-                      Submitting...
+                      Uploading...
                     </>
                   ) : (
                     <>
                       <CheckCircle2 size={17} />
-                      I Have Paid ₹{finalAmount.toLocaleString("en-IN")}
+                      Submit Payment Screenshot
                     </>
                   )}
                 </button>
@@ -590,8 +750,8 @@ const Payment = () => {
               <div className="payment-protection">
                 <Clock size={17} />
                 <span>
-                  Submission ke baad status Pending Verification rahega.
-                  Verification ke bina booking confirmed nahi hogi.
+                  Screenshot submit karne par booking Pending Verification
+                  rahegi. Owner ke verify karne se pehle booking confirmed nahi hogi.
                 </span>
               </div>
             </section>
@@ -632,6 +792,7 @@ const Payment = () => {
                     <span>From / Pickup</span>
                     <strong>{item.from || "Not specified"}</strong>
                   </div>
+
                   <div className="summary-detail-row">
                     <MapPin size={15} />
                     <span>To / Drop</span>
@@ -671,11 +832,13 @@ const Payment = () => {
                     <span>Check-out</span>
                     <strong>{formatDate(item.checkOut)}</strong>
                   </div>
+
                   <div className="summary-detail-row">
                     <Hotel size={15} />
                     <span>Rooms</span>
                     <strong>{item.rooms}</strong>
                   </div>
+
                   <div className="summary-detail-row">
                     <Users size={15} />
                     <span>Guests</span>
@@ -691,6 +854,7 @@ const Payment = () => {
                     <span>Plan</span>
                     <strong>{item.plan || "Standard Plan"}</strong>
                   </div>
+
                   {item.coverage && (
                     <div className="summary-detail-row">
                       <ShieldCheck size={15} />
@@ -708,10 +872,11 @@ const Payment = () => {
                     <span>Travellers</span>
                     <strong>{travellerCount || 1}</strong>
                   </div>
+
                   <div className="summary-detail-row">
                     <Clock size={15} />
                     <span>Duration</span>
-                    <strong>{tour.duration}</strong>
+                    <strong>{tour.duration || "Not specified"}</strong>
                   </div>
                 </>
               )}
@@ -719,6 +884,7 @@ const Payment = () => {
 
             <div className="payment-price">
               <h3>Price Summary</h3>
+
               <div className="payment-price-row">
                 <span>Booking Amount</span>
                 <strong>₹{initialTotal.toLocaleString("en-IN")}</strong>
@@ -737,19 +903,23 @@ const Payment = () => {
                 <span>Total Payable</span>
                 <strong>₹{finalAmount.toLocaleString("en-IN")}</strong>
               </div>
+
               <small>UPI app mein bhi yahi amount verify karein.</small>
             </div>
 
             <div className="customer-summary">
               <h3>Customer Details</h3>
+
               <div>
                 <User size={14} />
                 <span>{booking.fullName || "Name not provided"}</span>
               </div>
+
               <div>
                 <Mail size={14} />
                 <span>{booking.email || "Email not provided"}</span>
               </div>
+
               <div>
                 <Phone size={14} />
                 <span>{booking.mobile || "Mobile not provided"}</span>
@@ -760,7 +930,9 @@ const Payment = () => {
               <ShieldCheck size={19} />
               <div>
                 <strong>Payment Verification</strong>
-                <span>Booking is confirmed only after payment verification.</span>
+                <span>
+                  Booking is confirmed only after payment verification.
+                </span>
               </div>
             </div>
 
